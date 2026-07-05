@@ -6,6 +6,8 @@ training corpora and a human-review flag when the models disagree.
 Originally developed as a university AI project, rebuilt here as a clean,
 reproducible pipeline: **dataset analysis → models → Streamlit demo**.
 
+Live demo: https://fake-news-screening.streamlit.app/
+
 > **The honest headline:** the ensemble scores **93.6%** on a leakage-free
 > in-domain test set, but only **70%** on 30 out-of-domain adversarial
 > scenarios. That gap — dataset bias, not model magic — is what this project
@@ -174,6 +176,9 @@ python -m src.evaluate --adversarial # out-of-domain benchmark
 ## Deploy on Streamlit Cloud
 
 This repository is already configured for a standard Streamlit Cloud deploy.
+
+You can open the deployed app directly at
+https://fake-news-screening.streamlit.app/.
 
 1. Connect the GitHub repository `lauratonsi/Fake_News_Screening`.
 2. Use `app.py` as the entry point.
