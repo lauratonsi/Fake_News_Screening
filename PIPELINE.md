@@ -35,7 +35,12 @@ flowchart LR
    - Treated as a support signal, not as fact-checking.
    - The demo surfaces the retrieved evidence directly.
 
-5. **Deployment**
+5. **Claim-level retrieval**
+   - Split the input into claim-like sentences.
+   - Retrieve evidence independently for each claim.
+   - Surface supported, refuted, and unsupported claims in the UI.
+
+6. **Deployment**
    - `app.py` is the Streamlit entry point.
    - `requirements.txt` and `.streamlit/config.toml` make the app deployable on Streamlit Community Cloud.
    - In the Streamlit Cloud app settings, select Python 3.11 so TensorFlow 2.15 can install correctly.

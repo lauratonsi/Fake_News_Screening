@@ -23,6 +23,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from . import config
+from .claim_rag import analyze_claims
 from .rag import ReferenceRAG
 
 
@@ -70,6 +71,12 @@ class ScreeningSystem:
     def predict(self, text: str) -> dict:
         scores = self.model_scores(text)
         reference = self.reference_check(text)
+        claim_analysis = analyze_claims(text, self.reference) if self.reference is not None else {
+            "verdict": None,
+            "message": "reference corpus disabled",
+            "claims": [],
+            "summary": {"claims_total": 0, "supported": 0, "refuted": 0, "unsupported": 0},
+        }
 
         score = float(np.mean(list(scores.values())))
         spread = max(scores.values()) - min(scores.values())
@@ -95,6 +102,7 @@ class ScreeningSystem:
             "fake_probability": score,
             "model_scores": scores,
             "reference": reference,
+            "claim_analysis": claim_analysis,
             "needs_review": spread > config.DISAGREEMENT_SPREAD,
             "reason": reason,
         }

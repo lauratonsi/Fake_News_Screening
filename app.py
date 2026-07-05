@@ -111,3 +111,53 @@ if st.button("Analyze", type="primary") and text.strip():
                 st.markdown(f"**{label}** — similarity {hit['score']:.1%}")
                 st.write(hit["text"])
                 st.divider()
+
+    claim_analysis = result.get("claim_analysis", {})
+    claims = claim_analysis.get("claims", [])
+    if claims:
+        st.subheader("Claim-level retrieval")
+        summary = claim_analysis.get("summary", {})
+        cols = st.columns(4)
+        cols[0].metric("Claims", summary.get("claims_total", 0))
+        cols[1].metric("Supported", summary.get("supported", 0))
+        cols[2].metric("Refuted", summary.get("refuted", 0))
+        cols[3].metric("Unsupported", summary.get("unsupported", 0))
+
+        with st.expander("Claim-by-claim evidence", expanded=False):
+            for item in claims:
+                status = item["status"]
+                if status == "SUPPORTED":
+                    st.success(f"SUPPORTED — {item['claim']}")
+                elif status == "REFUTED":
+                    st.error(f"REFUTED — {item['claim']}")
+                else:
+                    st.info(f"UNSUPPORTED — {item['claim']}")
+                st.caption(f"{item['message']} | score {item['score']:.1%}")
+                for hit in item.get("evidence", [])[:2]:
+                    st.markdown(f"- **{hit['label']}** ({hit['score']:.1%}): {hit['text']}")
+                st.divider()
+
+    claim_analysis = result.get("claim_analysis", {})
+    claims = claim_analysis.get("claims", [])
+    if claims:
+        st.subheader("Claim-level retrieval")
+        summary = claim_analysis.get("summary", {})
+        cols = st.columns(4)
+        cols[0].metric("Claims", summary.get("claims_total", 0))
+        cols[1].metric("Supported", summary.get("supported", 0))
+        cols[2].metric("Refuted", summary.get("refuted", 0))
+        cols[3].metric("Unsupported", summary.get("unsupported", 0))
+
+        with st.expander("Claim-by-claim evidence", expanded=False):
+            for item in claims:
+                status = item["status"]
+                if status == "SUPPORTED":
+                    st.success(f"SUPPORTED — {item['claim']}")
+                elif status == "REFUTED":
+                    st.error(f"REFUTED — {item['claim']}")
+                else:
+                    st.info(f"UNSUPPORTED — {item['claim']}")
+                st.caption(f"{item['message']} | score {item['score']:.1%}")
+                for hit in item.get("evidence", [])[:2]:
+                    st.markdown(f"- **{hit['label']}** ({hit['score']:.1%}): {hit['text']}")
+                st.divider()

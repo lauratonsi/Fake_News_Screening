@@ -38,7 +38,10 @@ documents why those numbers are a red flag rather than a result:
    ~68k known real/fake articles. This is *retrieval over what the system has
    already seen*, *not* fact-checking, and the demo shows the retrieved
    evidence explicitly.
-5. **Human-review flag** — when the three models disagree strongly
+5. **Claim-level retrieval** — the input is split into claim-like sentences
+   and each claim is retrieved independently, so the UI can show supported,
+   refuted, or unsupported statements.
+6. **Human-review flag** — when the three models disagree strongly
    (spread > 0.40), the verdict is marked low-confidence instead of being
    reported as certain.
 
