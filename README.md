@@ -51,12 +51,19 @@ documents why those numbers are a red flag rather than a result:
 ## Pipeline & Figures
 
 The full pipeline is documented in [PIPELINE.md](PIPELINE.md). It shows the
-end-to-end flow from raw datasets to Streamlit deployment and collects the key
-bias-analysis figures:
+end-to-end flow from raw datasets to Streamlit deployment.
+
+The reporting layer is summarized in [reports/README.md](reports/README.md),
+which explains what each chart proves and why it matters for the final system.
+The key bias-analysis figures are:
 
 - [Reuters leakage](reports/figures/reuters_leakage.png)
 - [Style leakage](reports/figures/style_leakage.png)
 - [Temporal window](reports/figures/temporal_window.png)
+
+Taken together, they document the three failure modes that forced the final
+design away from a plain accuracy-driven benchmark and toward a retrieval-plus-
+review workflow.
 
 ## Pipeline summary
 
@@ -99,6 +106,20 @@ The dominant failure mode is **false positives on true political statements**
 models that short factual claims about US politics *look like* fake-news bait.
 This is the temporal/stylistic bias surviving every mitigation — and the reason
 the demo presents itself as a screening aid, not a truth oracle.
+
+## Reporting Takeaways
+
+The report charts are meant to answer three questions before anyone looks at
+accuracy:
+
+1. Is the dataset leaking the label through style?
+2. Is the label leaking through source markers?
+3. Is the temporal window too narrow to support generalization?
+
+If any of those answers is "yes", the model metrics need to be read as
+in-domain estimates only. That is why the portfolio now foregrounds the
+adversarial benchmark and the retrieval/review pipeline instead of just the
+headline accuracy number.
 
 ## Scope within the information-disorder taxonomy
 

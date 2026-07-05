@@ -52,10 +52,12 @@ flowchart LR
 
 ## Figures
 
-The main bias-analysis figures are stored in `reports/figures/`:
+The main bias-analysis figures are stored in `reports/figures/` and are indexed
+from [reports/README.md](reports/README.md):
 
 - [Reuters leakage](reports/figures/reuters_leakage.png)
 - [Style leakage](reports/figures/style_leakage.png)
 - [Temporal window](reports/figures/temporal_window.png)
 
-You can reference them from the README or open them directly from the repository.
+These charts explain why the final system is structured around bias control,
+multi-dataset fusion, and retrieval plus human review rather than raw accuracy.
