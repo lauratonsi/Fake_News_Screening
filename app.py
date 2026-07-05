@@ -64,8 +64,19 @@ text = st.text_area("News text", value=examples[choice], height=150)
 
 if st.button("Analyze", type="primary") and text.strip():
     system = load_system()
-    with st.spinner("Scoring..."):
-        result = system.predict(text)
+    try:
+        with st.spinner("Scoring..."):
+            result = system.predict(text)
+    except Exception:
+        import traceback
+
+        print(traceback.format_exc())  # visible in Streamlit Cloud logs
+        st.error(
+            "⚠️ Something went wrong while scoring this text — a live "
+            "retrieval source may be temporarily unavailable. Please try "
+            "again in a few seconds."
+        )
+        st.stop()
 
     st.divider()
     color = "red" if result["verdict"] == "FAKE" else "green"

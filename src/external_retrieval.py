@@ -83,8 +83,8 @@ class ExternalEvidenceRetriever:
         verdict = None
         score = 0.0
 
-        for claim in payload.get("claims", [])[: self.max_records]:
-            for review in claim.get("claimReview", [])[: self.max_records]:
+        for claim in (payload.get("claims") or [])[: self.max_records]:
+            for review in (claim.get("claimReview") or [])[: self.max_records]:
                 rating = review.get("textualRating") or review.get("rating")
                 review_verdict = self._rating_to_verdict(rating)
                 if review_verdict and verdict is None:
@@ -145,7 +145,7 @@ class ExternalEvidenceRetriever:
                 "evidence": [],
             }
 
-        articles = payload.get("articles") or payload.get("articles", [])
+        articles = payload.get("articles") or []
         evidence = []
         for article in articles[: self.max_records]:
             title = article.get("title") or article.get("seendate") or text
