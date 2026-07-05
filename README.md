@@ -1,5 +1,7 @@
 # Fake News Screening (HDSS)
 
+**English** | [Italiano](README.it.md)
+
 A hybrid disinformation screening system: a calibrated SVM, a Bi-GRU and a
 Bi-LSTM vote on English news text, backed by a similarity lookup against the
 training corpora and a human-review flag when the models disagree.
@@ -24,6 +26,14 @@ documents why those numbers are a red flag rather than a result:
 | **Stylistic leakage** — fake articles average 2.16 `!`/`?` per article and 30% capitals in titles, real ones 0.17 and 6% | models learn punctuation, not content |
 | **Source leakage** — 99.2% of "real" articles contain the `(Reuters)` dateline, 0.0% of fake ones | the label is literally written in the text |
 | **Temporal blindness** — 2015–2017 US politics only, with fake/real volumes misaligned in time | anything post-2018 (COVID, elections) is out of domain |
+
+<p align="center">
+  <img src="reports/figures/style_leakage.png" width="48%" alt="Fake articles average 2.16 exclamation/question marks per article vs 0.17 for real, and 30% capital letters in titles vs 6% for real" />
+  <img src="reports/figures/reuters_leakage.png" width="48%" alt="99.2% of real articles contain the (Reuters) dateline vs 0.0% of fake articles" />
+</p>
+<p align="center">
+  <img src="reports/figures/temporal_window.png" width="70%" alt="Real and fake article volumes per month, 2015 to 2018, showing a narrow and misaligned time window" />
+</p>
 
 ## What the system does about it
 
@@ -58,16 +68,10 @@ The full pipeline is documented in [PIPELINE.md](PIPELINE.md). It shows the
 end-to-end flow from raw datasets to Streamlit deployment.
 
 The reporting layer is summarized in [reports/README.md](reports/README.md),
-which explains what each chart proves and why it matters for the final system.
-The key bias-analysis figures are:
-
-- [Reuters leakage](reports/figures/reuters_leakage.png)
-- [Style leakage](reports/figures/style_leakage.png)
-- [Temporal window](reports/figures/temporal_window.png)
-
-Taken together, they document the three failure modes that forced the final
-design away from a plain accuracy-driven benchmark and toward a retrieval-plus-
-review workflow.
+which explains what each chart above proves and why it matters for the final
+system. Taken together, the three figures document the failure modes that
+forced the final design away from a plain accuracy-driven benchmark and
+toward a retrieval-plus-review workflow.
 
 ## Pipeline summary
 
