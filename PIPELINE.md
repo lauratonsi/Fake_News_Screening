@@ -41,9 +41,10 @@ flowchart LR
    - Surface supported, refuted, and unsupported claims in the UI.
 
 6. **Live retrieval fallback**
-   - Query a free external source first (Google Fact Check API when a key is available, otherwise GDELT).
-   - Fall back to the committed corpus when live evidence is weak or missing.
-   - Keep the system free by default.
+   - Query a free external source (Google Fact Check API when a key is available, otherwise GDELT).
+   - Live lookups are capped to the first few claims and rate-limited (GDELT allows ~1 request / 5 s).
+   - A live fact-check verdict takes precedence for a claim; the committed corpus decides otherwise.
+   - The adversarial benchmark runs with live retrieval disabled so its numbers stay reproducible offline.
 
 7. **Deployment**
    - `app.py` is the Streamlit entry point.

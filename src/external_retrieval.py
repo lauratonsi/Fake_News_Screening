@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlencode
 from urllib.request import urlopen
+
+from . import config
 
 
 @dataclass(frozen=True)
@@ -32,7 +35,11 @@ def _safe_fetch_json(url: str, timeout: int = 6) -> dict[str, Any]:
 class ExternalEvidenceRetriever:
     """Free live retrieval with an optional fact-check API upgrade."""
 
-    def __init__(self, timeout_seconds: int = 6, max_records: int = 5):
+    # GDELT enforces ~1 request / 5 s; shared across instances so parallel
+    # claims don't burn the quota on rate-limit rejections.
+    _last_gdelt_call: float = 0.0
+
+    def __init__(self, timeout_seconds: int = config.LIVE_TIMEOUT_SECONDS, max_records: int = 5):
         self.timeout_seconds = timeout_seconds
         self.max_records = max_records
         self.factcheck_api_key = os.getenv("GOOGLE_FACTCHECK_API_KEY", "").strip()
@@ -104,6 +111,17 @@ class ExternalEvidenceRetriever:
         }
 
     def _query_gdelt(self, text: str) -> dict:
+        now = time.monotonic()
+        if now - ExternalEvidenceRetriever._last_gdelt_call < config.GDELT_MIN_INTERVAL:
+            return {
+                "source": "gdelt",
+                "verdict": None,
+                "score": 0.0,
+                "message": "GDELT skipped (rate limit: one request every 5 s)",
+                "evidence": [],
+            }
+        ExternalEvidenceRetriever._last_gdelt_call = now
+
         params = urlencode(
             {
                 "query": text[:280],

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import re
 
+from . import config
+
 
 _CLAIM_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 
@@ -39,16 +41,24 @@ def analyze_claims(text: str, retriever, live_retriever=None, top_k: int = 2) ->
     unknown = 0
     live_sources = []
 
-    for claim in claims:
+    for index, claim in enumerate(claims):
         hit = retriever.query(claim, top_k=top_k)
-        live_hit = live_retriever.query(claim) if live_retriever is not None else None
-        if live_hit and live_hit.get("source"):
+        # Live lookups are capped: they cost seconds each and GDELT rate-limits.
+        live_hit = (
+            live_retriever.query(claim)
+            if live_retriever is not None and index < config.LIVE_MAX_CLAIMS
+            else None
+        )
+        if live_hit and live_hit.get("evidence"):
             live_sources.append(live_hit["source"])
 
-        if hit["verdict"] == "REAL":
+        # A live fact-check verdict is the highest-signal source; the committed
+        # reference corpus decides only when live evidence is absent or neutral.
+        live_verdict = live_hit.get("verdict") if live_hit else None
+        if live_verdict == "REAL" or (live_verdict is None and hit["verdict"] == "REAL"):
             status = "SUPPORTED"
             supported += 1
-        elif hit["verdict"] == "FAKE":
+        elif live_verdict == "FAKE" or (live_verdict is None and hit["verdict"] == "FAKE"):
             status = "REFUTED"
             refuted += 1
         else:

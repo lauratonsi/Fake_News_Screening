@@ -53,6 +53,15 @@ REF_MARGIN = 0.10            # required gap between the two corpora
 REF_OVERRIDE_THRESHOLD = 0.75  # above this the match overrides the ensemble
 REF_BOOST = 0.25             # otherwise it only shifts the ensemble score
 
+# --- Live retrieval -------------------------------------------------------------
+# Free external evidence: Google Fact Check when an API key is configured,
+# GDELT otherwise. GDELT allows roughly one request every 5 seconds, so live
+# lookups are capped per input and rate-limited; the committed reference
+# corpus is always available as the offline fallback.
+LIVE_MAX_CLAIMS = 3          # query live sources for at most this many claims
+LIVE_TIMEOUT_SECONDS = 6
+GDELT_MIN_INTERVAL = 5.0     # seconds between GDELT requests (API rate limit)
+
 # --- Ensemble -----------------------------------------------------------------
 # If the individual model scores span more than this, the system flags the
 # input for human review instead of pretending to be confident.

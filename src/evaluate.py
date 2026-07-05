@@ -43,7 +43,9 @@ def run_adversarial() -> None:
     from .predict import ScreeningSystem
 
     scenarios = json.loads(config.SCENARIOS_FILE.read_text())["scenarios"]
-    system = ScreeningSystem()
+    # No live retrieval: the benchmark must stay offline-reproducible, and the
+    # measured numbers must not depend on what external APIs return today.
+    system = ScreeningSystem(with_live=False)
 
     results = []
     for case in scenarios:

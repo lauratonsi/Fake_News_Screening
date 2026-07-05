@@ -129,7 +129,7 @@ if st.button("Analyze", type="primary") and text.strip():
                 st.divider()
 
         st.subheader("Live retrieval (free API / fallback)")
-        st.caption(f"Source: {claim_analysis.get('source', 'local-only')}")
+        st.caption(f"Source: {claim_analysis.get('source') or 'local-only'}")
         with st.expander("Live evidence by claim", expanded=False):
             for item in claims:
                 live = item.get("live") or {}

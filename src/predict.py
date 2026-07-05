@@ -31,7 +31,7 @@ from .rag import ReferenceRAG
 class ScreeningSystem:
     """Loads all artifacts once; ``predict`` scores a single text."""
 
-    def __init__(self, with_reference: bool = True):
+    def __init__(self, with_reference: bool = True, with_live: bool = True):
         artifact = joblib.load(config.SVM_FILE)
         self.svm = artifact["model"]
         self.vectorizer = artifact["vectorizer"]
@@ -43,7 +43,7 @@ class ScreeningSystem:
         self.lstm = load_model(config.LSTM_FILE)
 
         self.reference = ReferenceRAG() if with_reference else None
-        self.live_retriever = ExternalEvidenceRetriever()
+        self.live_retriever = ExternalEvidenceRetriever() if with_live else None
 
     # ------------------------------------------------------------------ signals
     def model_scores(self, text: str) -> dict:

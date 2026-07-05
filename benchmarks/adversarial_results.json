@@ -1,5 +1,5 @@
 {
-  "created": "2026-07-05T09:10:22+00:00",
+  "created": "2026-07-05T14:02:18+00:00",
   "system": "SVM + Bi-GRU + Bi-LSTM ensemble with reference-corpus heuristic",
   "summary": {
     "covid": {
@@ -96,7 +96,7 @@
         "gru": 0.971,
         "lstm": 0.97
       },
-      "reference_message": "similar to a known fake article (57%)",
+      "reference_message": "closest match is a known fake snippet (57%)",
       "needs_review": false,
       "correct": true
     },
@@ -291,7 +291,7 @@
         "gru": 0.587,
         "lstm": 0.019
       },
-      "reference_message": "similar to a known real article (58%)",
+      "reference_message": "closest match is a known real snippet (58%)",
       "needs_review": true,
       "correct": true
     },
