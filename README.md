@@ -279,6 +279,42 @@ If the deployment succeeds, the demo should load the committed models from
 TensorFlow — see *"Why both were affordable at once"* above for the memory
 budget behind that.
 
+## Live retrieval: setup and honest expectations
+
+The live layer (`src/external_retrieval.py`) queries two free sources per
+claim, in order:
+
+1. **Google Fact Check Tools** — only if `GOOGLE_FACTCHECK_API_KEY` is set; a
+   verdict from here takes precedence over everything else.
+2. **GDELT** (no key needed) — a live *news* search engine, not a
+   fact-checking archive.
+
+GDELT works best for genuinely current, ongoing topics (interest rates, an
+election in progress, an unfolding pandemic). Several of this project's demo
+examples and adversarial scenarios intentionally test *historical* claims
+(the 2016 election, a 2017 firing, 2020-21 COVID claims) — GDELT's article
+index starts around February 2017, so a claim only surfaces if some later
+article happens to mention it retrospectively, in roughly matching phrasing.
+Seeing "No live evidence found" on a historical example is expected
+behavior, not a broken feature; the same code reliably returns real articles
+for a claim about something happening this year.
+
+**To enable the higher-quality Google Fact Check path:**
+1. In Google Cloud Console, enable the "Fact Check Tools API" and create an
+   API key.
+2. Locally: `export GOOGLE_FACTCHECK_API_KEY=your-key-here` before
+   `streamlit run app.py`.
+3. On Streamlit Community Cloud: open the app's **Settings → Secrets** and
+   add
+   ```toml
+   GOOGLE_FACTCHECK_API_KEY = "your-key-here"
+   ```
+   Streamlit Cloud exposes Secrets to the app as environment variables, so no
+   code change is needed.
+
+Without a key, the app still works exactly as documented above — Google
+Fact Check is skipped and GDELT is the fallback.
+
 ## Honest limitations
 
 - English only; the training corpora essentially stop in 2020 — current events are out of domain.

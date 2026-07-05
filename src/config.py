@@ -76,9 +76,16 @@ GDELT_MIN_INTERVAL = 5.0     # seconds between GDELT requests (API rate limit)
 # both GDELT and Google Fact Check of hits. Queries are reduced to their
 # most search-relevant terms instead (see external_retrieval._extract_keywords).
 LIVE_KEYWORD_TERMS = 8
-GDELT_TIMESPAN = "1y"          # was 30d — real coverage of a claim is far
-                                # more likely within the last year than the
-                                # last month; adjust if recall is still low
+# GDELT's DOC 2.0 API archive starts ~Feb 2017. A 1-year window (the
+# previous value) makes it mathematically impossible to find coverage of
+# anything older than 1 year ago — which is most of this project's demo
+# examples and adversarial scenarios (2016 election, 2017 firings, 2020-21
+# COVID claims). Widened so GDELT actually has a chance at retrospective
+# mentions of older claims; genuinely current topics (e.g. interest rates)
+# still work fine with a wide window. GDELT is still a *news* search engine,
+# not a fact-checking archive: a historical claim with no retrospective
+# coverage will still correctly show "no live evidence".
+GDELT_TIMESPAN = "10y"
 GDELT_SOURCE_LANGUAGE = "english"  # the demo is English-only (see README)
 GOOGLE_FACTCHECK_LANGUAGE = "en"
 

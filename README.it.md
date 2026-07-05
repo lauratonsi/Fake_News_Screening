@@ -294,6 +294,44 @@ committati in `models/` e `reference_corpus/` e funzionare senza bisogno di
 riaddestramento né di TensorFlow — vedi *"Perché entrambi sono diventati
 sostenibili insieme"* sopra per il conto della memoria dietro questa scelta.
 
+## Retrieval live: configurazione e aspettative oneste
+
+Il livello live (`src/external_retrieval.py`) interroga due fonti gratuite
+per ogni claim, in ordine:
+
+1. **Google Fact Check Tools** — solo se è impostata
+   `GOOGLE_FACTCHECK_API_KEY`; un verdetto da qui ha precedenza su tutto
+   il resto.
+2. **GDELT** (nessuna chiave richiesta) — un motore di ricerca di notizie
+   *live*, non un archivio di fact-checking.
+
+GDELT funziona meglio per argomenti genuinamente attuali e in corso (tassi
+d'interesse, un'elezione in corso, una pandemia in svolgimento). Diversi
+esempi della demo e scenari adversarial testano intenzionalmente claim
+*storici* (l'elezione del 2016, un licenziamento del 2017, claim COVID del
+2020-21) — l'indice degli articoli di GDELT parte da circa febbraio 2017,
+quindi un claim emerge solo se un articolo successivo lo menziona
+retrospettivamente, con una formulazione più o meno simile. Vedere "nessuna
+evidenza live trovata" su un esempio storico è un comportamento atteso, non
+una funzionalità rotta; lo stesso codice restituisce affidabilmente articoli
+reali per un claim su qualcosa che accade quest'anno.
+
+**Per attivare il percorso di qualità superiore di Google Fact Check:**
+1. Nella Google Cloud Console, abilita la "Fact Check Tools API" e crea una
+   chiave API.
+2. In locale: `export GOOGLE_FACTCHECK_API_KEY=la-tua-chiave` prima di
+   `streamlit run app.py`.
+3. Su Streamlit Community Cloud: apri **Settings → Secrets** dell'app e
+   aggiungi
+   ```toml
+   GOOGLE_FACTCHECK_API_KEY = "la-tua-chiave"
+   ```
+   Streamlit Cloud espone i Secrets all'app come variabili d'ambiente, quindi
+   non serve alcuna modifica al codice.
+
+Senza chiave, l'app funziona esattamente come documentato sopra — Google
+Fact Check viene saltato e GDELT resta il fallback.
+
 ## Limitazioni oneste
 
 - Solo inglese; i corpora di addestramento si fermano sostanzialmente al
