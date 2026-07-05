@@ -57,11 +57,22 @@ st.warning("The system is trained on English news datasets — please paste Engl
 
 examples = {
     "— pick an example or paste your own text —": "",
-    "Hoax (sensational)": "WOW! Hillary Clinton caught on secret video admitting the election was a total fraud. MUST WATCH!",
-    "Plausible real news": "The Federal Reserve announced on Wednesday a new set of regulations to monitor inflation and support the labor market.",
+    "Hoax (sensational style)": "WOW! Hillary Clinton caught on secret video admitting the election was a total fraud. MUST WATCH!",
+    "Hoax (calm, no sensational style)": "A leaked memo reveals that all major banks secretly agreed to delete private debts on a specific date.",
     "Health misinformation": "A recent peer-reviewed study from Oxford University confirms that daily consumption of vitamin C completely prevents all viral infections.",
+    "COVID conspiracy claim": "The COVID-19 vaccine changes your DNA and will be inherited by your children.",
+    "Same COVID claim, reworded": "Getting the COVID shot permanently alters your genetic code.",
+    "Plausible real news": "The Federal Reserve announced on Wednesday a new set of regulations to monitor inflation and support the labor market.",
+    "True political fact (flagged for review)": "Barack Obama served two terms as President from 2009 to 2017.",
+    "True political fact (a known hard case)": "Donald Trump won the 2016 presidential election defeating Hillary Clinton.",
 }
 choice = st.selectbox("Examples", list(examples.keys()))
+st.caption(
+    "The examples span hoaxes in different writing styles, a claim reworded "
+    "to test semantic retrieval, and two true statements the system "
+    "handles differently — including one it still gets wrong. That's "
+    "intentional: see the README's out-of-domain benchmark for why."
+)
 text = st.text_area("News text", value=examples[choice], height=150)
 
 if st.button("Analyze", type="primary") and text.strip():
