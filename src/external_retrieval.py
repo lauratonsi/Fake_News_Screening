@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -30,6 +31,58 @@ class ExternalHit:
 def _safe_fetch_json(url: str, timeout: int = 6) -> dict[str, Any]:
     with urlopen(url, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+_STOPWORDS = frozenset("""
+the a an and or but of to in on for with at by from as is are was were be
+been being that this these those it its his her their our your my he she
+they we you i not no do does did has have had will would can could should
+may might said says according also after before during over into about than
+then which who whom what when where how why up down out if so such some
+any all most
+""".split())
+
+_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]+")
+
+
+def _extract_keywords(text: str, max_terms: int = config.LIVE_KEYWORD_TERMS) -> str:
+    """Reduce a claim to its most search-relevant terms.
+
+    GDELT and Google Fact Check index real articles and fact-checks, not
+    arbitrary paraphrases: a full grammatical sentence rarely matches
+    anything verbatim, even when the underlying event is well covered.
+    Multi-word proper nouns (e.g. "Federal Reserve") are kept as quoted
+    phrases; other stopword-free content words fill the rest of the query.
+    """
+    words = _WORD_RE.findall(text)
+
+    proper_nouns = []
+    i = 0
+    while i < len(words):
+        if words[i][0].isupper() and words[i].lower() not in _STOPWORDS:
+            j = i + 1
+            while j < len(words) and words[j][0].isupper():
+                j += 1
+            proper_nouns.append(" ".join(words[i:j]))
+            i = j
+        else:
+            i += 1
+
+    content_words = [
+        w for w in words
+        if len(w) > 3 and w.lower() not in _STOPWORDS and not w[0].isupper()
+    ]
+
+    seen: set[str] = set()
+    terms = []
+    for term in proper_nouns + content_words:
+        key = term.lower()
+        if key not in seen:
+            seen.add(key)
+            terms.append(term)
+
+    terms = terms[:max_terms] or words[:max_terms]
+    return " ".join(f'"{t}"' if " " in t else t for t in terms)
 
 
 class ExternalEvidenceRetriever:
@@ -65,7 +118,14 @@ class ExternalEvidenceRetriever:
                 "evidence": [],
             }
 
-        params = urlencode({"query": text[:280], "pageSize": self.max_records, "key": self.factcheck_api_key})
+        params = urlencode(
+            {
+                "query": _extract_keywords(text),
+                "languageCode": config.GOOGLE_FACTCHECK_LANGUAGE,
+                "pageSize": self.max_records,
+                "key": self.factcheck_api_key,
+            }
+        )
         url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?{params}"
 
         try:
@@ -122,14 +182,16 @@ class ExternalEvidenceRetriever:
             }
         ExternalEvidenceRetriever._last_gdelt_call = now
 
+        keywords = _extract_keywords(text)
+        query = f"{keywords} sourcelang:{config.GDELT_SOURCE_LANGUAGE}" if keywords else f"sourcelang:{config.GDELT_SOURCE_LANGUAGE}"
         params = urlencode(
             {
-                "query": text[:280],
+                "query": query,
                 "mode": "ArtList",
                 "format": "json",
                 "maxrecords": self.max_records,
                 "sort": "hybridrel",
-                "timespan": "30d",
+                "timespan": config.GDELT_TIMESPAN,
             }
         )
         url = f"https://api.gdeltproject.org/api/v2/doc/doc?{params}"

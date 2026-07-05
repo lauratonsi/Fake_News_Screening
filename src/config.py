@@ -62,6 +62,17 @@ LIVE_MAX_CLAIMS = 3          # query live sources for at most this many claims
 LIVE_TIMEOUT_SECONDS = 6
 GDELT_MIN_INTERVAL = 5.0     # seconds between GDELT requests (API rate limit)
 
+# A full, grammatical sentence almost never appears verbatim in a news
+# article or a fact-check, so sending the raw claim as the query starves
+# both GDELT and Google Fact Check of hits. Queries are reduced to their
+# most search-relevant terms instead (see external_retrieval._extract_keywords).
+LIVE_KEYWORD_TERMS = 8
+GDELT_TIMESPAN = "1y"          # was 30d — real coverage of a claim is far
+                                # more likely within the last year than the
+                                # last month; adjust if recall is still low
+GDELT_SOURCE_LANGUAGE = "english"  # the demo is English-only (see README)
+GOOGLE_FACTCHECK_LANGUAGE = "en"
+
 # --- Ensemble -----------------------------------------------------------------
 # If the individual model scores span more than this, the system flags the
 # input for human review instead of pretending to be confident.
