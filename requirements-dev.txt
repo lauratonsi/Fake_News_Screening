@@ -1,0 +1,3 @@
+# Only needed to run the test suite (pytest tests/), not for the app or training.
+-r requirements.txt
+pytest==8.3.4
