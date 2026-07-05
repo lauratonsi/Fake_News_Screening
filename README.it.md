@@ -4,18 +4,21 @@
 
 Un sistema ibrido di screening della disinformazione: una SVM calibrata, una
 Bi-GRU e una Bi-LSTM votano su testi di notizie in inglese, supportate da una
-ricerca per similarità sui corpora di addestramento e da un flag di revisione
-umana quando i modelli sono in disaccordo.
+ricerca per similarità *semantica* sui corpora di addestramento e da un flag
+di revisione umana quando i modelli sono in disaccordo.
 Nato come progetto universitario di IA, qui è stato ricostruito come una
 pipeline pulita e riproducibile: **analisi del dataset → modelli → demo
 Streamlit**.
 
 Demo live: https://fake-news-screening.streamlit.app/
 
-> **Il dato onesto:** l'ensemble ottiene **93,6%** su un test set in-domain
-> senza leakage, ma solo **70%** su 30 scenari adversarial fuori dominio.
-> Questo divario — bias del dataset, non magia dei modelli — è il vero
-> oggetto di questo progetto.
+> **Il dato onesto:** l'ensemble ottiene **94,6%** su un test set in-domain
+> senza leakage e **83,3%** su 30 scenari adversarial fuori dominio. Il
+> divario si è ridotto molto (era 23,6 punti, ora 11,3) da quando il
+> retrieval è passato dalla sovrapposizione letterale di parole a veri
+> embeddings di frase — vedi *"Due usi molto diversi degli embeddings"* più
+> sotto per capire perché quell'upgrade ha aiutato il retrieval ma avrebbe
+> danneggiato la classificazione.
 
 ## Il problema del "99% di accuratezza"
 
@@ -49,11 +52,15 @@ documenta perché quei numeri sono un campanello d'allarme, non un risultato:
    articoli). Correggere solo questo protocollo ha spostato la SVM da un
    dichiarato ~98% a un reale 95,3%.
 3. **Ensemble di modelli economici e trasparenti** — baseline TF-IDF +
-   LinearSVC calibrata, più due RNN bidirezionali leggere (~1,3 MB ciascuna);
-   il punteggio finale è la media semplice.
-4. **Livello di retrieval di riferimento** — similarità coseno rispetto a
-   snippet dei ~68k articoli noti come veri/falsi. Questo è *retrieval su ciò
-   che il sistema ha già visto*, *non* fact-checking, e la demo mostra
+   LinearSVC calibrata, più due RNN bidirezionali leggere (~1,3 MB ciascuna),
+   servite come modelli TFLite tramite l'interprete `ai-edge-litert` (~10 MB)
+   invece del runtime TensorFlow completo; il punteggio finale è la media
+   semplice.
+4. **Livello di retrieval di riferimento** — similarità di embeddings di
+   frase ([`all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2))
+   rispetto a snippet dei ~68k articoli noti come veri/falsi: riconosce un
+   claim *riformulato*, non solo letterale. Questo è *retrieval su ciò che
+   il sistema ha già visto*, *non* fact-checking, e la demo mostra
    esplicitamente le evidenze recuperate.
 5. **Retrieval a livello di claim** — l'input è diviso in frasi simili a
    affermazioni verificabili, e ogni claim viene recuperato in modo
@@ -86,8 +93,8 @@ flowchart LR
     A[Dataset grezzi] --> B[Pulizia / deduplicazione / filtri]
     B --> C[Split train-test]
     C --> D[TF-IDF + tokenizer]
-    D --> E[SVM + Bi-GRU + Bi-LSTM]
-    E --> F[Euristica del corpus di riferimento]
+    D --> E[SVM + Bi-GRU/Bi-LSTM -> TFLite]
+    E --> F[Retrieval semantico sul corpus di riferimento]
     F --> G[Ensemble + flag di revisione]
     G --> H[Demo Streamlit]
 ```
@@ -100,9 +107,9 @@ flowchart LR
 | Modello | Accuratezza | Precisione (fake) | Recall (fake) | F1 (fake) |
 |---|---|---|---|---|
 | SVM (TF-IDF, calibrata) | 95,3% | 94,8% | 94,9% | 94,8% |
-| Bi-GRU | 91,5% | 95,9% | 84,7% | 89,9% |
-| Bi-LSTM | 90,8% | 91,3% | 87,9% | 89,6% |
-| **Ensemble (media)** | **93,6%** | 96,0% | 89,5% | 92,6% |
+| Bi-GRU | 92,9% | 93,0% | 91,0% | 92,0% |
+| Bi-LSTM | 92,9% | 94,1% | 89,9% | 92,0% |
+| **Ensemble (media)** | **94,6%** | 94,5% | 93,3% | 93,9% |
 
 **Fuori dominio** — 30 scenari adversarial (hoax plausibili, verità scomode),
 `python -m src.evaluate --adversarial` →
@@ -110,18 +117,21 @@ flowchart LR
 
 | Dominio | Accuratezza | Falsi positivi | Falsi negativi | Segnalati per revisione |
 |---|---|---|---|---|
-| Politica | 60% | 4 | 0 | 3 |
-| COVID | 80% | 1 | 1 | 2 |
-| Misto | 70% | 2 | 1 | 1 |
-| **Totale** | **70%** | 7 | 2 | 6 |
+| Politica | 70% | 3 | 0 | 2 |
+| COVID | 100% | 0 | 0 | 3 |
+| Misto | 80% | 2 | 0 | 3 |
+| **Totale** | **83,3%** | 5 | 0 | 8 |
 
-Il fallimento dominante è **falsi positivi su affermazioni politiche vere**
-("Obama ha servito due mandati…" → FAKE): la finestra di addestramento
-2015–2017 ha insegnato ai modelli che brevi affermazioni fattuali sulla
-politica USA *assomigliano* a esche da fake news. È il bias
-temporale/stilistico che sopravvive a ogni mitigazione — ed è il motivo per
-cui la demo si presenta come un aiuto allo screening, non come un oracolo di
-verità.
+Passare il livello di retrieval da TF-IDF a embeddings semantici (vedi sotto)
+ha portato questo numero dal 70% all'83,3% e ha eliminato ogni falso
+negativo — gli errori rimasti sono **falsi positivi su affermazioni
+politiche vere** ("Obama ha servito due mandati…" → FAKE): la finestra di
+addestramento 2015–2017 ha insegnato ai classificatori che brevi
+affermazioni fattuali sulla politica USA *assomigliano* a esche da fake
+news, e nessuno dei livelli di retrieval ha mai visto quella specifica
+frase vera. È il bias temporale/stilistico che sopravvive a ogni
+mitigazione — ed è il motivo per cui la demo si presenta come un aiuto allo
+screening, non come un oracolo di verità.
 
 ## Cosa dicono i grafici
 
@@ -137,12 +147,15 @@ lette come stime valide solo in-domain. Per questo il portfolio mette in
 primo piano il benchmark adversarial e la pipeline di retrieval/revisione,
 invece del solo numero di accuratezza.
 
-## Perché i modelli non sono stati "modernizzati" con embeddings transformer
+## Due usi molto diversi degli embeddings
 
 TF-IDF, una SVM lineare e due piccole RNN sembrano datati rispetto ai
-classificatori testuali attuali. Questa scelta è stata testata, non data per
-scontata: `experiments/` sostituisce la baseline TF-IDF con embeddings di
-frase
+classificatori testuali attuali — perciò entrambi gli usi possibili degli
+embeddings transformer sono stati testati su questo progetto, con risultati
+opposti e ugualmente istruttivi.
+
+**Classificazione: testata, respinta.** `experiments/` sostituisce la
+baseline TF-IDF con embeddings di frase
 ([`all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2))
 più un classificatore lineare calibrato, addestrato e valutato sullo
 *stesso identico* dataset fuso e split di `src.train`
@@ -150,22 +163,51 @@ più un classificatore lineare calibrato, addestrato e valutato sullo
 
 | | In-domain | Fuori dominio (30 scenari) |
 |---|---|---|
-| Ensemble attuale (TF-IDF + SVM/GRU/LSTM) | 93,6% | 70% |
+| Ensemble attuale (TF-IDF + SVM/GRU/LSTM) | 94,6% | 83,3% |
 | Embeddings MiniLM + classificatore lineare | 88,5% | 60% |
 
 Il classificatore basato su embeddings ha perso su entrambi i fronti — il
 divario più netto è su WELFake (67,1% contro 86,9%) e sul dominio
-adversarial "misto" (40% contro 70%). Non è un bug: è la conseguenza
-misurata del leakage documentato in
+adversarial "misto". È la conseguenza misurata del leakage documentato in
 [`notebooks/01_dataset_bias_analysis.ipynb`](notebooks/01_dataset_bias_analysis.ipynb):
 la distinzione fake/vero in questi corpora è guidata in gran parte da stile
 superficiale e marcatori di fonte (punteggiatura, maiuscole, la dicitura
 `(Reuters)`), e TF-IDF è costruito apposta per sfruttare esattamente quel
 segnale letterale. Un modello di embedding semantico è costruito per
 esserne invariante — quindi su questo dataset, capire *meglio* il
-significato è uno svantaggio, non un vantaggio. La baseline classica resta
-perché l'alternativa è stata provata e misurata, non perché non sia mai
-stata messa in discussione.
+significato è uno svantaggio per la classificazione.
+
+**Retrieval: testato, adottato.** Trovare il claim *noto* più vicino è un
+compito diverso dalla classificazione, ed è esattamente ciò per cui gli
+embeddings semantici sono fatti: far corrispondere "il vaccino COVID altera
+il tuo codice genetico" a un claim salvato sul vaccino che "altera
+permanentemente il DNA", pur con un vocabolario condiviso quasi nullo —
+qualcosa che il vecchio livello di riferimento TF-IDF, basato sulla
+sovrapposizione letterale di termini, non poteva fare per costruzione.
+`src/rag.py` ora calcola una volta sola gli embeddings dei ~68k snippet del
+corpus di riferimento (`REF_EMBEDDINGS_FILE`, committato, ~46 MB) e
+confronta le query per similarità coseno. Questo unico cambio ha portato il
+benchmark adversarial dal 70% all'83,3%, eliminando ogni falso negativo.
+
+Una lezione di calibrazione emersa dal cambio: la similarità di embeddings
+**non** separa "stesso claim, riformulato" da "stesso argomento, claim
+diverso" con la stessa nettezza dei match quasi letterali di TF-IDF. Sui 30
+scenari adversarial, 3 delle 4 chiamate sbagliate del solo layer di
+riferimento avevano punteggi 0,69–0,82 — ben sopra la soglia di override
+ereditata dalla versione TF-IDF (0,65). `REF_OVERRIDE_THRESHOLD` è ora 0,90:
+solo ripetizioni quasi letterali di uno snippet noto scavalcano del tutto
+l'ensemble, tutto il resto sposta solo il punteggio (`REF_BOOST`).
+
+**Perché entrambi sono diventati sostenibili insieme:** le RNN ora girano
+come modelli TFLite tramite l'interprete `ai-edge-litert` (~10 MB) invece
+del runtime TensorFlow completo (~500+ MB solo per il framework, a
+prescindere dalla dimensione del modello). La memoria di picco misurata per
+l'intero sistema — SVM, entrambe le RNN, il corpus di riferimento e il
+modello di embeddings insieme — è di **~600 MB**, contro un limite di 1 GB
+del piano gratuito di Streamlit Cloud. Tenere TensorFlow e PyTorch insieme
+non ci sarebbe stato; rinunciare alle RNN o agli embeddings sarebbe stato un
+compromesso inutile. L'addestramento avviene ancora con TensorFlow completo
+(`requirements-train.txt`); solo l'app deployata doveva cambiare.
 
 ## Collocazione nella tassonomia del disordine informativo
 
@@ -192,14 +234,16 @@ uno stress test permanente e ripetibile, non un esperimento occasionale.
 ├── src/
 │   ├── config.py           ogni percorso, iperparametro e soglia
 │   ├── data.py             caricamento / filtri / fusione / protocollo di split unificati
-│   ├── train.py            addestra SVM + GRU + LSTM, scrive metrics.json
+│   ├── train.py            addestra SVM + GRU + LSTM, esporta TFLite, scrive metrics.json
 │   ├── predict.py          ScreeningSystem: ensemble + euristica + flag di revisione
 │   ├── evaluate.py         report in-domain e benchmark adversarial
-│   ├── rag.py              retrieval sul corpus di riferimento (similarità TF-IDF)
+│   ├── rag.py              retrieval sul corpus di riferimento (embeddings semantici)
 │   ├── claim_rag.py        analisi di retrieval per singolo claim
-│   └── external_retrieval.py  evidenza live (Google Fact Check / GDELT)
-├── models/                 artefatti addestrati (~8 MB, committati)
-├── reference_corpus/       snippet noti veri/falsi per l'euristica (~9 MB)
+│   ├── external_retrieval.py  evidenza live (Google Fact Check / GDELT)
+│   └── tokenizer.py        tokenizer indipendente dal framework (niente TF in produzione)
+├── tests/                  suite pytest: protocollo di split, logica ensemble, retrieval
+├── models/                 artefatti addestrati incl. RNN TFLite (~8 MB, committati)
+├── reference_corpus/       snippet noti veri/falsi + embeddings (~55 MB)
 ├── benchmarks/             scenari versionati + risultati misurati
 ├── experiments/            alternative testate e scartate (vedi sopra)
 ├── notebooks/              analisi del bias del dataset (il "perché" del design)
@@ -216,10 +260,16 @@ pip install -r requirements.txt
 # Avvia la demo con i modelli già committati
 streamlit run app.py
 
-# Riproduci tutto da zero (servono i dataset, vedi data/README.md)
+# Riproduci tutto da zero — servono i dataset (vedi data/README.md)
+# E TensorFlow, usato solo per l'addestramento; l'app in sé non ne ha bisogno:
+pip install -r requirements-train.txt
 python -m src.train                  # ~10 min su CPU
 python -m src.evaluate               # tabella metriche in-domain
 python -m src.evaluate --adversarial # benchmark fuori dominio
+
+# Esegui la suite di test (protocollo di split, logica ensemble, retrieval)
+pip install -r requirements-dev.txt
+python -m pytest tests/
 ```
 
 ## Deploy su Streamlit Cloud
@@ -233,23 +283,29 @@ https://fake-news-screening.streamlit.app/.
 1. Collega il repository GitHub `lauratonsi/Fake_News_Screening`.
 2. Usa `app.py` come entry point.
 3. Mantieni `main` come branch predefinito.
-4. Lascia che Streamlit installi le dipendenze da `requirements.txt`.
+4. Lascia che Streamlit installi le dipendenze da `requirements.txt` (include
+   un indice PyTorch CPU-only per `torch`, così non scarica una build CUDA
+   da svariati GB).
 5. In **Advanced settings**, imposta la versione di Python a **3.11**.
-   TensorFlow 2.15 non funziona su Python 3.13+ e l'app non si installerà
-   correttamente se Streamlit usa l'interprete più recente di default.
 6. I default di tema/server sono impostati in `.streamlit/config.toml`.
 
 Se il deploy va a buon fine, la demo dovrebbe caricare i modelli già
-committati in `models/` e funzionare senza bisogno di riaddestramento.
+committati in `models/` e `reference_corpus/` e funzionare senza bisogno di
+riaddestramento né di TensorFlow — vedi *"Perché entrambi sono diventati
+sostenibili insieme"* sopra per il conto della memoria dietro questa scelta.
 
 ## Limitazioni oneste
 
 - Solo inglese; i corpora di addestramento si fermano sostanzialmente al
   2020 — gli eventi attuali sono fuori dominio.
-- Il lookup di riferimento riconosce claim *già noti*; non può verificarne
-  di nuovi.
+- Il lookup di riferimento riconosce claim *già noti* (ora anche
+  riformulati — vedi sopra); non può verificarne di genuinamente nuovi. La
+  sua ricerca top-1 per vicinanza può anche confondere "stesso argomento"
+  con "stesso claim" su input ambigui, motivo per cui scavalcare del tutto
+  l'ensemble è riservato ai match quasi letterali
+  (`REF_OVERRIDE_THRESHOLD = 0,90`).
 - Le RNN sono addestrate su un sottocampione di 5.000 articoli (budget CPU);
   la SVM vede l'intero training set.
-- L'accuratezza fuori dominio (70%) è il numero che conta per un uso reale,
-  ed è il motivo per cui qualunque deploy di un sistema come questo richiede
-  un essere umano nel ciclo.
+- L'accuratezza fuori dominio (83,3%) è il numero che conta per un uso
+  reale, ed è il motivo per cui qualunque deploy di un sistema come questo
+  richiede un essere umano nel ciclo.

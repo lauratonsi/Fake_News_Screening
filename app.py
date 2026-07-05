@@ -30,9 +30,11 @@ with st.sidebar:
         """
 1. **Ensemble** — three models trained on ISOT + WELFake + COVID-19
    score the text; the average is the fake probability.
-2. **Reference corpus** — the input is compared with snippets of known
-    real/fake articles. A strong match overrides the ensemble, a weak
-    one only shifts the score, and the closest retrieved snippets are shown.
+2. **Reference corpus** — the input is compared, by semantic embedding
+    similarity, with snippets of known real/fake articles (so reworded
+    claims still match). A near-verbatim match overrides the ensemble, a
+    weaker one only shifts the score, and the closest retrieved snippets
+    are shown.
 3. **Agreement check** — if the models disagree strongly, the verdict
    is flagged for human review.
         """
@@ -42,9 +44,9 @@ with st.sidebar:
         """
 - English-language news only.
 - Training data covers 2015–2021: recent events are out of domain.
-- The reference lookup is **similarity matching, not fact-checking** —
-    it cannot verify claims it has never seen, but it now returns the retrieved
-    evidence.
+- The reference lookup is **semantic similarity matching, not fact-checking** —
+    it cannot verify claims it has never seen (in any wording), but it now
+    returns the retrieved evidence.
 - Out-of-domain accuracy is substantially lower than in-domain
   (see the README benchmark) — treat verdicts as a screening aid,
   not a truth oracle.

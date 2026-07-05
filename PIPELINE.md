@@ -7,8 +7,8 @@ flowchart LR
     A[Raw datasets\nISOT + WELFake + COVID] --> B[Data cleaning\nremove leakage, deduplicate, filter quality]
     B --> C[Train/test split\nshared untouched test set]
     C --> D[Feature extraction\nTF-IDF + Keras tokenizer]
-    D --> E[Model training\nSVM + Bi-GRU + Bi-LSTM]
-    E --> F[Reference corpus\nsimilarity against known real/fake snippets]
+    D --> E[Model training\nSVM + Bi-GRU + Bi-LSTM -> TFLite]
+    E --> F[Reference corpus\nsemantic embedding similarity]
     F --> G[Ensemble + review flag\nmean score + disagreement check]
     G --> H[Streamlit demo\ndeployed from app.py]
 ```
@@ -27,11 +27,17 @@ flowchart LR
 
 3. **Modeling**
    - TF-IDF + calibrated LinearSVC as the transparent baseline.
-   - Bi-GRU and Bi-LSTM as lightweight neural models.
+   - Bi-GRU and Bi-LSTM as lightweight neural models, exported to TFLite so
+     the deployed app runs them via the ~10 MB `ai-edge-litert` interpreter
+     instead of the full TensorFlow runtime.
    - Simple ensemble average with a disagreement check.
+   - `experiments/` documents a tested alternative (sentence-embedding
+     classifier) that was measured and rejected — see the README.
 
-4. **Reference corpus heuristic**
-   - Retrieval against snippets already known to be real or fake.
+4. **Reference corpus retrieval**
+   - Semantic similarity (sentence embeddings, `all-MiniLM-L6-v2`) against
+     snippets already known to be real or fake — matches reworded claims,
+     not just literal ones.
    - Treated as a support signal, not as fact-checking.
    - The demo surfaces the retrieved evidence directly.
 
@@ -49,7 +55,10 @@ flowchart LR
 7. **Deployment**
    - `app.py` is the Streamlit entry point.
    - `requirements.txt` and `.streamlit/config.toml` make the app deployable on Streamlit Community Cloud.
-   - In the Streamlit Cloud app settings, select Python 3.11 so TensorFlow 2.15 can install correctly.
+   - In the Streamlit Cloud app settings, select Python 3.11.
+   - The deployed app never imports TensorFlow (only used for training, via
+     `requirements-train.txt`) — see the README for why that keeps the whole
+     system, RNNs and embeddings included, under ~600 MB peak memory.
    - Live app: https://fake-news-screening.streamlit.app/
 
 ## Figures
