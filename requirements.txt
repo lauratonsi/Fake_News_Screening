@@ -3,7 +3,6 @@ pandas==2.3.3
 numpy==1.26.4
 scikit-learn==1.7.2
 joblib==1.5.3
-tensorflow-cpu==2.15.0; sys_platform != "darwin"
-tensorflow==2.15.0; sys_platform == "darwin"
+tensorflow==2.15.1
 tf-keras==2.15.1
 streamlit==1.53.0
