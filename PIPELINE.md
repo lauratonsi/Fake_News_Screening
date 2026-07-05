@@ -40,7 +40,12 @@ flowchart LR
    - Retrieve evidence independently for each claim.
    - Surface supported, refuted, and unsupported claims in the UI.
 
-6. **Deployment**
+6. **Live retrieval fallback**
+   - Query a free external source first (Google Fact Check API when a key is available, otherwise GDELT).
+   - Fall back to the committed corpus when live evidence is weak or missing.
+   - Keep the system free by default.
+
+7. **Deployment**
    - `app.py` is the Streamlit entry point.
    - `requirements.txt` and `.streamlit/config.toml` make the app deployable on Streamlit Community Cloud.
    - In the Streamlit Cloud app settings, select Python 3.11 so TensorFlow 2.15 can install correctly.

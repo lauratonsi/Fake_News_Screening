@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 from . import config
 from .claim_rag import analyze_claims
+from .external_retrieval import ExternalEvidenceRetriever
 from .rag import ReferenceRAG
 
 
@@ -42,6 +43,7 @@ class ScreeningSystem:
         self.lstm = load_model(config.LSTM_FILE)
 
         self.reference = ReferenceRAG() if with_reference else None
+        self.live_retriever = ExternalEvidenceRetriever()
 
     # ------------------------------------------------------------------ signals
     def model_scores(self, text: str) -> dict:
@@ -71,7 +73,7 @@ class ScreeningSystem:
     def predict(self, text: str) -> dict:
         scores = self.model_scores(text)
         reference = self.reference_check(text)
-        claim_analysis = analyze_claims(text, self.reference) if self.reference is not None else {
+        claim_analysis = analyze_claims(text, self.reference, self.live_retriever) if self.reference is not None else {
             "verdict": None,
             "message": "reference corpus disabled",
             "claims": [],

@@ -27,7 +27,7 @@ def split_claims(text: str) -> list[str]:
     return claims
 
 
-def analyze_claims(text: str, retriever, top_k: int = 2) -> dict:
+def analyze_claims(text: str, retriever, live_retriever=None, top_k: int = 2) -> dict:
     """Run retrieval for each claim-like sentence and aggregate the evidence."""
     claims = split_claims(text)
     if not claims:
@@ -37,9 +37,14 @@ def analyze_claims(text: str, retriever, top_k: int = 2) -> dict:
     supported = 0
     refuted = 0
     unknown = 0
+    live_sources = []
 
     for claim in claims:
         hit = retriever.query(claim, top_k=top_k)
+        live_hit = live_retriever.query(claim) if live_retriever is not None else None
+        if live_hit and live_hit.get("source"):
+            live_sources.append(live_hit["source"])
+
         if hit["verdict"] == "REAL":
             status = "SUPPORTED"
             supported += 1
@@ -58,6 +63,7 @@ def analyze_claims(text: str, retriever, top_k: int = 2) -> dict:
                 "score": round(float(hit["score"]), 4),
                 "message": hit["message"],
                 "evidence": hit["evidence"],
+                "live": live_hit,
             }
         )
 
@@ -74,6 +80,7 @@ def analyze_claims(text: str, retriever, top_k: int = 2) -> dict:
     return {
         "verdict": verdict,
         "message": message,
+        "source": live_sources[0] if live_sources else None,
         "claims": analyzed,
         "summary": {
             "claims_total": len(analyzed),

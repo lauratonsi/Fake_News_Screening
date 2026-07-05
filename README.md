@@ -41,7 +41,10 @@ documents why those numbers are a red flag rather than a result:
 5. **Claim-level retrieval** — the input is split into claim-like sentences
    and each claim is retrieved independently, so the UI can show supported,
    refuted, or unsupported statements.
-6. **Human-review flag** — when the three models disagree strongly
+6. **Live retrieval fallback** — claim analysis can query free live sources
+    first and fall back to the committed corpus when there is no strong live
+    evidence.
+7. **Human-review flag** — when the three models disagree strongly
    (spread > 0.40), the verdict is marked low-confidence instead of being
    reported as certain.
 

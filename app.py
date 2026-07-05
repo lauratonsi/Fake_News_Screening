@@ -103,15 +103,6 @@ if st.button("Analyze", type="primary") and text.strip():
             "This is a support signal, not fact-checking."
         )
 
-    evidence = result["reference"].get("evidence", [])
-    if evidence:
-        with st.expander("Retrieved evidence", expanded=False):
-            for hit in evidence[:4]:
-                label = "REAL" if hit["label"] == "REAL" else "FAKE"
-                st.markdown(f"**{label}** — similarity {hit['score']:.1%}")
-                st.write(hit["text"])
-                st.divider()
-
     claim_analysis = result.get("claim_analysis", {})
     claims = claim_analysis.get("claims", [])
     if claims:
@@ -137,27 +128,18 @@ if st.button("Analyze", type="primary") and text.strip():
                     st.markdown(f"- **{hit['label']}** ({hit['score']:.1%}): {hit['text']}")
                 st.divider()
 
-    claim_analysis = result.get("claim_analysis", {})
-    claims = claim_analysis.get("claims", [])
-    if claims:
-        st.subheader("Claim-level retrieval")
-        summary = claim_analysis.get("summary", {})
-        cols = st.columns(4)
-        cols[0].metric("Claims", summary.get("claims_total", 0))
-        cols[1].metric("Supported", summary.get("supported", 0))
-        cols[2].metric("Refuted", summary.get("refuted", 0))
-        cols[3].metric("Unsupported", summary.get("unsupported", 0))
-
-        with st.expander("Claim-by-claim evidence", expanded=False):
+        st.subheader("Live retrieval (free API / fallback)")
+        st.caption(f"Source: {claim_analysis.get('source', 'local-only')}")
+        with st.expander("Live evidence by claim", expanded=False):
             for item in claims:
-                status = item["status"]
-                if status == "SUPPORTED":
-                    st.success(f"SUPPORTED — {item['claim']}")
-                elif status == "REFUTED":
-                    st.error(f"REFUTED — {item['claim']}")
-                else:
-                    st.info(f"UNSUPPORTED — {item['claim']}")
-                st.caption(f"{item['message']} | score {item['score']:.1%}")
-                for hit in item.get("evidence", [])[:2]:
-                    st.markdown(f"- **{hit['label']}** ({hit['score']:.1%}): {hit['text']}")
+                live = item.get("live") or {}
+                st.markdown(f"**{item['claim']}**")
+                st.caption(f"{live.get('message', item['message'])}")
+                for hit in live.get("evidence", [])[:3]:
+                    title = hit.get("title") or "Untitled source"
+                    publisher = hit.get("publisher") or hit.get("source") or "live"
+                    url = hit.get("url") or ""
+                    st.markdown(f"- **{publisher}**: {title}")
+                    if url:
+                        st.caption(url)
                 st.divider()
