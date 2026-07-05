@@ -1,0 +1,271 @@
+{
+  "system": "embeddings_svm (experimental)",
+  "summary": {
+    "covid": {
+      "n": 10,
+      "accuracy": 0.8,
+      "false_positives": 1,
+      "false_negatives": 1
+    },
+    "mixed": {
+      "n": 10,
+      "accuracy": 0.4,
+      "false_positives": 5,
+      "false_negatives": 1
+    },
+    "politics": {
+      "n": 10,
+      "accuracy": 0.6,
+      "false_positives": 4,
+      "false_negatives": 0
+    },
+    "overall": {
+      "n": 30,
+      "accuracy": 0.6,
+      "false_positives": 10,
+      "false_negatives": 2
+    }
+  },
+  "results": [
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Pope Francis officially endorsed Donald Trump for president in 2016.",
+      "predicted": "FAKE",
+      "fake_probability": 0.964,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Hillary Clinton sold 20% of U.S. uranium to Russia through secret deals.",
+      "predicted": "FAKE",
+      "fake_probability": 0.99,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Donald Trump won the popular vote but Democrats hid millions of illegal ballots.",
+      "predicted": "FAKE",
+      "fake_probability": 0.901,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "FBI found 30,000 deleted emails proving Clinton planned terrorist attacks.",
+      "predicted": "FAKE",
+      "fake_probability": 0.963,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Obama wiretapped Trump Tower during the 2016 election campaign.",
+      "predicted": "FAKE",
+      "fake_probability": 0.92,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "Donald Trump won the 2016 presidential election defeating Hillary Clinton.",
+      "predicted": "FAKE",
+      "fake_probability": 0.949,
+      "correct": false
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "FBI Director James Comey was fired by President Trump in May 2017.",
+      "predicted": "FAKE",
+      "fake_probability": 0.775,
+      "correct": false
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "Barack Obama served two terms as President from 2009 to 2017.",
+      "predicted": "FAKE",
+      "fake_probability": 0.761,
+      "correct": false
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "The U.S. Senate confirmed Neil Gorsuch to the Supreme Court in April 2017.",
+      "predicted": "REAL",
+      "fake_probability": 0.304,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "Hillary Clinton conceded the 2016 election in a phone call to Donald Trump.",
+      "predicted": "FAKE",
+      "fake_probability": 0.993,
+      "correct": false
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "The COVID-19 vaccine changes your DNA and will be inherited by your children.",
+      "predicted": "REAL",
+      "fake_probability": 0.361,
+      "correct": false
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "A leaked study shows that masks reduce oxygen levels so much that they damage the brain permanently.",
+      "predicted": "FAKE",
+      "fake_probability": 0.905,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "Secret hospital data prove that most people who died of COVID actually died because of the vaccine.",
+      "predicted": "FAKE",
+      "fake_probability": 0.997,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "According to a whistleblower, the WHO already had a cure for COVID in 2019 but decided to hide it.",
+      "predicted": "FAKE",
+      "fake_probability": 0.988,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "Several governments used fake COVID case numbers to justify permanent lockdowns and control the population.",
+      "predicted": "FAKE",
+      "fake_probability": 0.997,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "Multiple countries temporarily suspended specific COVID-19 vaccines after reports of rare side effects.",
+      "predicted": "REAL",
+      "fake_probability": 0.115,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "Health authorities updated the definition of a COVID-19 case as testing capacity and knowledge improved.",
+      "predicted": "REAL",
+      "fake_probability": 0.005,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "During the pandemic, some governments asked social media platforms to remove content considered dangerous to public health.",
+      "predicted": "REAL",
+      "fake_probability": 0.235,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "Several studies confirmed that COVID-19 can cause long-term complications even in young adults.",
+      "predicted": "REAL",
+      "fake_probability": 0.048,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "International investigations found that some early COVID statistics were incomplete or delayed, creating confusion about the real impact.",
+      "predicted": "FAKE",
+      "fake_probability": 0.86,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "The European Central Bank unexpectedly raised interest rates after inflation remained above target.",
+      "predicted": "FAKE",
+      "fake_probability": 0.5,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "A leaked memo reveals that all major banks secretly agreed to delete private debts on a specific date.",
+      "predicted": "REAL",
+      "fake_probability": 0.455,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "The national football team qualified for the World Cup after winning the last qualifying match.",
+      "predicted": "FAKE",
+      "fake_probability": 0.931,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "A viral video claims that the last World Cup final was replayed in secret because the result was manipulated.",
+      "predicted": "FAKE",
+      "fake_probability": 0.997,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "Astronomers announced the discovery of an Earth-sized exoplanet in the habitable zone of a nearby star.",
+      "predicted": "FAKE",
+      "fake_probability": 0.99,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "Scientists confirmed that NASA hid evidence of a second moon orbiting the Earth for decades.",
+      "predicted": "FAKE",
+      "fake_probability": 0.859,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "Several European cities introduced low-emission zones to limit the most polluting cars in city centers.",
+      "predicted": "FAKE",
+      "fake_probability": 0.857,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "According to anonymous police sources, all CCTV cameras in a major capital are now equipped with secret facial recognition lists for political opponents.",
+      "predicted": "FAKE",
+      "fake_probability": 0.984,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "A major streaming platform announced a new regulation that limits the use of deepfakes in political documentaries.",
+      "predicted": "FAKE",
+      "fake_probability": 0.547,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "An internal report shows that social media companies can directly change users' memories by altering old photos in their private albums.",
+      "predicted": "FAKE",
+      "fake_probability": 0.811,
+      "correct": true
+    }
+  ]
+}

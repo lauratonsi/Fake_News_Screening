@@ -137,6 +137,36 @@ lette come stime valide solo in-domain. Per questo il portfolio mette in
 primo piano il benchmark adversarial e la pipeline di retrieval/revisione,
 invece del solo numero di accuratezza.
 
+## Perché i modelli non sono stati "modernizzati" con embeddings transformer
+
+TF-IDF, una SVM lineare e due piccole RNN sembrano datati rispetto ai
+classificatori testuali attuali. Questa scelta è stata testata, non data per
+scontata: `experiments/` sostituisce la baseline TF-IDF con embeddings di
+frase
+([`all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2))
+più un classificatore lineare calibrato, addestrato e valutato sullo
+*stesso identico* dataset fuso e split di `src.train`
+(`experiments/embeddings_baseline.py`, `experiments/embeddings_adversarial.py`).
+
+| | In-domain | Fuori dominio (30 scenari) |
+|---|---|---|
+| Ensemble attuale (TF-IDF + SVM/GRU/LSTM) | 93,6% | 70% |
+| Embeddings MiniLM + classificatore lineare | 88,5% | 60% |
+
+Il classificatore basato su embeddings ha perso su entrambi i fronti — il
+divario più netto è su WELFake (67,1% contro 86,9%) e sul dominio
+adversarial "misto" (40% contro 70%). Non è un bug: è la conseguenza
+misurata del leakage documentato in
+[`notebooks/01_dataset_bias_analysis.ipynb`](notebooks/01_dataset_bias_analysis.ipynb):
+la distinzione fake/vero in questi corpora è guidata in gran parte da stile
+superficiale e marcatori di fonte (punteggiatura, maiuscole, la dicitura
+`(Reuters)`), e TF-IDF è costruito apposta per sfruttare esattamente quel
+segnale letterale. Un modello di embedding semantico è costruito per
+esserne invariante — quindi su questo dataset, capire *meglio* il
+significato è uno svantaggio, non un vantaggio. La baseline classica resta
+perché l'alternativa è stata provata e misurata, non perché non sia mai
+stata messa in discussione.
+
 ## Collocazione nella tassonomia del disordine informativo
 
 "Fake news" è un'etichetta scientificamente inadeguata: il framework
@@ -164,10 +194,14 @@ uno stress test permanente e ripetibile, non un esperimento occasionale.
 │   ├── data.py             caricamento / filtri / fusione / protocollo di split unificati
 │   ├── train.py            addestra SVM + GRU + LSTM, scrive metrics.json
 │   ├── predict.py          ScreeningSystem: ensemble + euristica + flag di revisione
-│   └── evaluate.py         report in-domain e benchmark adversarial
+│   ├── evaluate.py         report in-domain e benchmark adversarial
+│   ├── rag.py              retrieval sul corpus di riferimento (similarità TF-IDF)
+│   ├── claim_rag.py        analisi di retrieval per singolo claim
+│   └── external_retrieval.py  evidenza live (Google Fact Check / GDELT)
 ├── models/                 artefatti addestrati (~8 MB, committati)
 ├── reference_corpus/       snippet noti veri/falsi per l'euristica (~9 MB)
 ├── benchmarks/             scenari versionati + risultati misurati
+├── experiments/            alternative testate e scartate (vedi sopra)
 ├── notebooks/              analisi del bias del dataset (il "perché" del design)
 ├── reports/figures/        grafici esportati
 └── data/                   dataset (non committati — vedi data/README.md)

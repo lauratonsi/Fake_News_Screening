@@ -129,6 +129,33 @@ in-domain estimates only. That is why the portfolio now foregrounds the
 adversarial benchmark and the retrieval/review pipeline instead of just the
 headline accuracy number.
 
+## Why the models weren't "modernized" to transformer embeddings
+
+TF-IDF, a linear SVM and two small RNNs look dated next to current text
+classifiers. That choice was tested, not assumed: `experiments/` replaces
+the TF-IDF baseline with sentence embeddings
+([`all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2))
+plus a calibrated linear classifier, trained and evaluated on the *exact
+same* fused dataset and split as `src.train`
+(`experiments/embeddings_baseline.py`, `experiments/embeddings_adversarial.py`).
+
+| | In-domain | Out-of-domain (30 scenarios) |
+|---|---|---|
+| Current ensemble (TF-IDF + SVM/GRU/LSTM) | 93.6% | 70% |
+| MiniLM embeddings + linear classifier | 88.5% | 60% |
+
+The embeddings-based classifier lost on both axes — sharpest on WELFake
+(67.1% vs. 86.9%) and on the adversarial "mixed" domain (40% vs. 70%). This
+is not a bug; it is the measured consequence of the leakage documented in
+[`notebooks/01_dataset_bias_analysis.ipynb`](notebooks/01_dataset_bias_analysis.ipynb):
+the fake/real split in these corpora is driven largely by surface style and
+source markers (punctuation, capitalization, the `(Reuters)` dateline), and
+TF-IDF is built to exploit exactly that literal signal. A semantic embedding
+model is built to be invariant to it — so on this dataset, understanding
+meaning *better* is a handicap, not an advantage. The classical baseline
+stays because the alternative was tried and measured, not because it went
+unquestioned.
+
 ## Scope within the information-disorder taxonomy
 
 "Fake news" is a scientifically inadequate label: Wardle & Derakhshan's
@@ -155,10 +182,14 @@ stress test rather than a one-off experiment.
 │   ├── data.py             unified load / filter / fuse / split protocol
 │   ├── train.py            trains SVM + GRU + LSTM, writes metrics.json
 │   ├── predict.py          ScreeningSystem: ensemble + heuristic + review flag
-│   └── evaluate.py         in-domain report & adversarial benchmark
+│   ├── evaluate.py         in-domain report & adversarial benchmark
+│   ├── rag.py              reference-corpus retrieval (TF-IDF similarity)
+│   ├── claim_rag.py        per-claim retrieval analysis
+│   └── external_retrieval.py  live evidence (Google Fact Check / GDELT)
 ├── models/                 trained artifacts (~8 MB, committed)
 ├── reference_corpus/       known real/fake snippets for the heuristic (~9 MB)
 ├── benchmarks/             versioned scenarios + measured results
+├── experiments/            tested-and-rejected alternatives (see below)
 ├── notebooks/              dataset bias analysis (the "why" of the design)
 ├── reports/figures/        exported charts
 └── data/                   datasets (not committed — see data/README.md)
