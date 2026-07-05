@@ -1,0 +1,8 @@
+# Datasets are downloaded locally (see data/README.md), never committed
+data/*
+!data/README.md
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store

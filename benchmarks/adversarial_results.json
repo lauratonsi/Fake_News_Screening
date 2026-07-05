@@ -1,0 +1,494 @@
+{
+  "created": "2026-07-05T09:10:22+00:00",
+  "system": "SVM + Bi-GRU + Bi-LSTM ensemble with reference-corpus heuristic",
+  "summary": {
+    "covid": {
+      "n": 10,
+      "accuracy": 0.8,
+      "precision_fake": 0.8,
+      "recall_fake": 0.8,
+      "false_positives": 1,
+      "false_negatives": 1,
+      "flagged_for_review": 2
+    },
+    "mixed": {
+      "n": 10,
+      "accuracy": 0.7,
+      "precision_fake": 0.6667,
+      "recall_fake": 0.8,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "flagged_for_review": 1
+    },
+    "politics": {
+      "n": 10,
+      "accuracy": 0.6,
+      "precision_fake": 0.5556,
+      "recall_fake": 1.0,
+      "false_positives": 4,
+      "false_negatives": 0,
+      "flagged_for_review": 3
+    },
+    "overall": {
+      "n": 30,
+      "accuracy": 0.7,
+      "precision_fake": 0.65,
+      "recall_fake": 0.8667,
+      "false_positives": 7,
+      "false_negatives": 2,
+      "flagged_for_review": 6
+    }
+  },
+  "results": [
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Pope Francis officially endorsed Donald Trump for president in 2016.",
+      "predicted": "FAKE",
+      "fake_probability": 0.988,
+      "model_scores": {
+        "svm": 0.996,
+        "gru": 0.996,
+        "lstm": 0.972
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Hillary Clinton sold 20% of U.S. uranium to Russia through secret deals.",
+      "predicted": "FAKE",
+      "fake_probability": 0.995,
+      "model_scores": {
+        "svm": 0.997,
+        "gru": 0.999,
+        "lstm": 0.99
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Donald Trump won the popular vote but Democrats hid millions of illegal ballots.",
+      "predicted": "FAKE",
+      "fake_probability": 0.542,
+      "model_scores": {
+        "svm": 0.965,
+        "gru": 0.393,
+        "lstm": 0.267
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "FBI found 30,000 deleted emails proving Clinton planned terrorist attacks.",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 0.936,
+        "gru": 0.971,
+        "lstm": 0.97
+      },
+      "reference_message": "similar to a known fake article (57%)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "text": "Obama wiretapped Trump Tower during the 2016 election campaign.",
+      "predicted": "FAKE",
+      "fake_probability": 0.978,
+      "model_scores": {
+        "svm": 0.998,
+        "gru": 0.973,
+        "lstm": 0.962
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "Donald Trump won the 2016 presidential election defeating Hillary Clinton.",
+      "predicted": "FAKE",
+      "fake_probability": 0.995,
+      "model_scores": {
+        "svm": 0.999,
+        "gru": 0.997,
+        "lstm": 0.99
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": false
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "FBI Director James Comey was fired by President Trump in May 2017.",
+      "predicted": "FAKE",
+      "fake_probability": 0.792,
+      "model_scores": {
+        "svm": 0.427,
+        "gru": 0.981,
+        "lstm": 0.966
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "Barack Obama served two terms as President from 2009 to 2017.",
+      "predicted": "FAKE",
+      "fake_probability": 0.675,
+      "model_scores": {
+        "svm": 0.062,
+        "gru": 0.98,
+        "lstm": 0.984
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "The U.S. Senate confirmed Neil Gorsuch to the Supreme Court in April 2017.",
+      "predicted": "REAL",
+      "fake_probability": 0.004,
+      "model_scores": {
+        "svm": 0.005,
+        "gru": 0.005,
+        "lstm": 0.003
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "text": "Hillary Clinton conceded the 2016 election in a phone call to Donald Trump.",
+      "predicted": "FAKE",
+      "fake_probability": 0.992,
+      "model_scores": {
+        "svm": 1.0,
+        "gru": 0.996,
+        "lstm": 0.979
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": false
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "The COVID-19 vaccine changes your DNA and will be inherited by your children.",
+      "predicted": "FAKE",
+      "fake_probability": 0.909,
+      "model_scores": {
+        "svm": 0.789,
+        "gru": 0.989,
+        "lstm": 0.948
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "A leaked study shows that masks reduce oxygen levels so much that they damage the brain permanently.",
+      "predicted": "FAKE",
+      "fake_probability": 0.962,
+      "model_scores": {
+        "svm": 0.926,
+        "gru": 0.983,
+        "lstm": 0.977
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "Secret hospital data prove that most people who died of COVID actually died because of the vaccine.",
+      "predicted": "FAKE",
+      "fake_probability": 0.963,
+      "model_scores": {
+        "svm": 0.912,
+        "gru": 0.987,
+        "lstm": 0.989
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "According to a whistleblower, the WHO already had a cure for COVID in 2019 but decided to hide it.",
+      "predicted": "FAKE",
+      "fake_probability": 0.809,
+      "model_scores": {
+        "svm": 0.999,
+        "gru": 0.682,
+        "lstm": 0.747
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "text": "Several governments used fake COVID case numbers to justify permanent lockdowns and control the population.",
+      "predicted": "REAL",
+      "fake_probability": 0.419,
+      "model_scores": {
+        "svm": 0.549,
+        "gru": 0.491,
+        "lstm": 0.218
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": false
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "Multiple countries temporarily suspended specific COVID-19 vaccines after reports of rare side effects.",
+      "predicted": "REAL",
+      "fake_probability": 0.081,
+      "model_scores": {
+        "svm": 0.235,
+        "gru": 0.003,
+        "lstm": 0.006
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "Health authorities updated the definition of a COVID-19 case as testing capacity and knowledge improved.",
+      "predicted": "REAL",
+      "fake_probability": 0.0,
+      "model_scores": {
+        "svm": 0.048,
+        "gru": 0.587,
+        "lstm": 0.019
+      },
+      "reference_message": "similar to a known real article (58%)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "During the pandemic, some governments asked social media platforms to remove content considered dangerous to public health.",
+      "predicted": "REAL",
+      "fake_probability": 0.09,
+      "model_scores": {
+        "svm": 0.056,
+        "gru": 0.033,
+        "lstm": 0.182
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "Several studies confirmed that COVID-19 can cause long-term complications even in young adults.",
+      "predicted": "FAKE",
+      "fake_probability": 0.538,
+      "model_scores": {
+        "svm": 0.698,
+        "gru": 0.02,
+        "lstm": 0.897
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "text": "International investigations found that some early COVID statistics were incomplete or delayed, creating confusion about the real impact.",
+      "predicted": "REAL",
+      "fake_probability": 0.008,
+      "model_scores": {
+        "svm": 0.014,
+        "gru": 0.003,
+        "lstm": 0.005
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "The European Central Bank unexpectedly raised interest rates after inflation remained above target.",
+      "predicted": "REAL",
+      "fake_probability": 0.13,
+      "model_scores": {
+        "svm": 0.385,
+        "gru": 0.004,
+        "lstm": 0.001
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "A leaked memo reveals that all major banks secretly agreed to delete private debts on a specific date.",
+      "predicted": "FAKE",
+      "fake_probability": 0.972,
+      "model_scores": {
+        "svm": 0.972,
+        "gru": 0.997,
+        "lstm": 0.948
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "The national football team qualified for the World Cup after winning the last qualifying match.",
+      "predicted": "FAKE",
+      "fake_probability": 0.812,
+      "model_scores": {
+        "svm": 0.923,
+        "gru": 0.661,
+        "lstm": 0.852
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "A viral video claims that the last World Cup final was replayed in secret because the result was manipulated.",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 1.0,
+        "gru": 1.0,
+        "lstm": 0.999
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "Astronomers announced the discovery of an Earth-sized exoplanet in the habitable zone of a nearby star.",
+      "predicted": "FAKE",
+      "fake_probability": 0.907,
+      "model_scores": {
+        "svm": 0.96,
+        "gru": 0.877,
+        "lstm": 0.883
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "Scientists confirmed that NASA hid evidence of a second moon orbiting the Earth for decades.",
+      "predicted": "FAKE",
+      "fake_probability": 0.924,
+      "model_scores": {
+        "svm": 0.85,
+        "gru": 0.993,
+        "lstm": 0.93
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "Several European cities introduced low-emission zones to limit the most polluting cars in city centers.",
+      "predicted": "REAL",
+      "fake_probability": 0.072,
+      "model_scores": {
+        "svm": 0.214,
+        "gru": 0.0,
+        "lstm": 0.002
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "According to anonymous police sources, all CCTV cameras in a major capital are now equipped with secret facial recognition lists for political opponents.",
+      "predicted": "FAKE",
+      "fake_probability": 0.875,
+      "model_scores": {
+        "svm": 0.987,
+        "gru": 0.978,
+        "lstm": 0.659
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "text": "A major streaming platform announced a new regulation that limits the use of deepfakes in political documentaries.",
+      "predicted": "REAL",
+      "fake_probability": 0.057,
+      "model_scores": {
+        "svm": 0.151,
+        "gru": 0.018,
+        "lstm": 0.003
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "text": "An internal report shows that social media companies can directly change users' memories by altering old photos in their private albums.",
+      "predicted": "REAL",
+      "fake_probability": 0.365,
+      "model_scores": {
+        "svm": 0.574,
+        "gru": 0.148,
+        "lstm": 0.372
+      },
+      "reference_message": "no strong match in the reference corpus",
+      "needs_review": true,
+      "correct": false
+    }
+  ]
+}
