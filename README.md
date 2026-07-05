@@ -42,6 +42,29 @@ documents why those numbers are a red flag rather than a result:
    (spread > 0.40), the verdict is marked low-confidence instead of being
    reported as certain.
 
+## Pipeline & Figures
+
+The full pipeline is documented in [PIPELINE.md](PIPELINE.md). It shows the
+end-to-end flow from raw datasets to Streamlit deployment and collects the key
+bias-analysis figures:
+
+- [Reuters leakage](reports/figures/reuters_leakage.png)
+- [Style leakage](reports/figures/style_leakage.png)
+- [Temporal window](reports/figures/temporal_window.png)
+
+## Pipeline summary
+
+```mermaid
+flowchart LR
+    A[Raw datasets] --> B[Clean / deduplicate / filter]
+    B --> C[Train-test split]
+    C --> D[TF-IDF + tokenizer]
+    D --> E[SVM + Bi-GRU + Bi-LSTM]
+    E --> F[Reference corpus heuristic]
+    F --> G[Ensemble + review flag]
+    G --> H[Streamlit demo]
+```
+
 ## Results (all measured, all reproducible)
 
 **In-domain** — shared held-out test set, `python -m src.train` →
