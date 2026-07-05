@@ -4,10 +4,10 @@ The system combines three signals:
 
 1. An ensemble (simple average) of the calibrated SVM, the Bi-GRU and the
    Bi-LSTM fake-probability scores.
-2. A reference-corpus similarity heuristic: cosine similarity against snippets
-   of articles already known to be real or fake. This is honest pattern
-   matching against the training corpora — NOT fact-checking. A strong match
-   can override the ensemble; a weaker one only shifts the score.
+2. A retrieval-based reference layer: cosine similarity against snippets of
+    articles already known to be real or fake. This is honest retrieval over
+    the committed corpora — NOT fact-checking. A strong match can override the
+    ensemble; a weaker one only shifts the score.
 3. An agreement check: when the individual models disagree strongly, the
    verdict is flagged for human review instead of being reported as confident.
 """
@@ -22,10 +22,8 @@ os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
 from . import config
+from .rag import ReferenceRAG
 
 
 class ScreeningSystem:
@@ -42,17 +40,7 @@ class ScreeningSystem:
         self.gru = load_model(config.GRU_FILE)
         self.lstm = load_model(config.LSTM_FILE)
 
-        self.reference = None
-        if with_reference and config.REF_REAL_FILE.exists():
-            real = pd.read_csv(config.REF_REAL_FILE)["text"].fillna("")
-            fake = pd.read_csv(config.REF_FAKE_FILE)["text"].fillna("")
-            ref_vec = TfidfVectorizer(max_features=config.REF_TFIDF_FEATURES)
-            ref_vec.fit(pd.concat([real, fake]))
-            self.reference = {
-                "vectorizer": ref_vec,
-                "real_matrix": ref_vec.transform(real),
-                "fake_matrix": ref_vec.transform(fake),
-            }
+        self.reference = ReferenceRAG() if with_reference else None
 
     # ------------------------------------------------------------------ signals
     def model_scores(self, text: str) -> dict:
@@ -72,31 +60,11 @@ class ScreeningSystem:
         return scores
 
     def reference_check(self, text: str) -> dict:
-        """Similarity of the input against known real/fake snippets."""
-        result = {"verdict": None, "score": 0.0, "message": "reference corpus disabled"}
+        """Retrieve the closest known real/fake snippets and score them."""
+        result = {"verdict": None, "score": 0.0, "message": "reference corpus disabled", "evidence": []}
         if self.reference is None:
             return result
-
-        snippet = text[: config.REF_SNIPPET_CHARS].lower().strip()
-        vec = self.reference["vectorizer"].transform([snippet])
-        sim_fake = float(cosine_similarity(vec, self.reference["fake_matrix"]).max())
-        sim_real = float(cosine_similarity(vec, self.reference["real_matrix"]).max())
-
-        if sim_fake > config.REF_MATCH_THRESHOLD and sim_fake > sim_real + config.REF_MARGIN:
-            result = {
-                "verdict": "FAKE",
-                "score": sim_fake,
-                "message": f"similar to a known fake article ({sim_fake:.0%})",
-            }
-        elif sim_real > config.REF_MATCH_THRESHOLD and sim_real > sim_fake + config.REF_MARGIN:
-            result = {
-                "verdict": "REAL",
-                "score": sim_real,
-                "message": f"similar to a known real article ({sim_real:.0%})",
-            }
-        else:
-            result["message"] = "no strong match in the reference corpus"
-        return result
+        return self.reference.query(text)
 
     # ------------------------------------------------------------------ verdict
     def predict(self, text: str) -> dict:

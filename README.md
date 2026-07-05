@@ -34,10 +34,10 @@ documents why those numbers are a red flag rather than a result:
 3. **Ensemble of cheap, transparent models** — TF-IDF + calibrated LinearSVC
    baseline, plus two light bidirectional RNNs (~1.3 MB each); final score is
    the simple average.
-4. **Reference-corpus heuristic** — cosine similarity against snippets of the
-   ~68k known real/fake articles. This is *pattern matching against what the
-   system has already seen*, *not* fact-checking, and it is labeled as such
-   in the demo.
+4. **Reference retrieval layer** — cosine similarity against snippets of the
+   ~68k known real/fake articles. This is *retrieval over what the system has
+   already seen*, *not* fact-checking, and the demo shows the retrieved
+   evidence explicitly.
 5. **Human-review flag** — when the three models disagree strongly
    (spread > 0.40), the verdict is marked low-confidence instead of being
    reported as certain.

@@ -20,8 +20,8 @@ def load_system():
 st.title("🛡️ Fake News Screening")
 st.markdown(
     "**Hybrid Disinformation Screening System (HDSS)** — a calibrated SVM, a "
-    "Bi-GRU and a Bi-LSTM vote on the input; a similarity lookup against the "
-    "training corpora adds a heuristic signal."
+    "Bi-GRU and a Bi-LSTM vote on the input; a retrieval layer against the "
+    "training corpora adds evidence."
 )
 
 with st.sidebar:
@@ -31,8 +31,8 @@ with st.sidebar:
 1. **Ensemble** — three models trained on ISOT + WELFake + COVID-19
    score the text; the average is the fake probability.
 2. **Reference corpus** — the input is compared with snippets of known
-   real/fake articles. A strong match overrides the ensemble, a weak
-   one only shifts the score.
+    real/fake articles. A strong match overrides the ensemble, a weak
+    one only shifts the score, and the closest retrieved snippets are shown.
 3. **Agreement check** — if the models disagree strongly, the verdict
    is flagged for human review.
         """
@@ -43,7 +43,8 @@ with st.sidebar:
 - English-language news only.
 - Training data covers 2015–2021: recent events are out of domain.
 - The reference lookup is **similarity matching, not fact-checking** —
-  it cannot verify claims it has never seen.
+    it cannot verify claims it has never seen, but it now returns the retrieved
+    evidence.
 - Out-of-domain accuracy is substantially lower than in-domain
   (see the README benchmark) — treat verdicts as a screening aid,
   not a truth oracle.
@@ -98,6 +99,15 @@ if st.button("Analyze", type="primary") and text.strip():
         else:
             st.info(f"ℹ️ {message}")
         st.caption(
-            "Similarity against articles already known to be real or fake. "
-            "This is a heuristic support signal, not fact-checking."
+            "Retrieval against articles already known to be real or fake. "
+            "This is a support signal, not fact-checking."
         )
+
+    evidence = result["reference"].get("evidence", [])
+    if evidence:
+        with st.expander("Retrieved evidence", expanded=False):
+            for hit in evidence[:4]:
+                label = "REAL" if hit["label"] == "REAL" else "FAKE"
+                st.markdown(f"**{label}** — similarity {hit['score']:.1%}")
+                st.write(hit["text"])
+                st.divider()

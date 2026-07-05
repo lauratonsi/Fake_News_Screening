@@ -31,8 +31,9 @@ flowchart LR
    - Simple ensemble average with a disagreement check.
 
 4. **Reference corpus heuristic**
-   - Similarity lookup against snippets already known to be real or fake.
+   - Retrieval against snippets already known to be real or fake.
    - Treated as a support signal, not as fact-checking.
+   - The demo surfaces the retrieved evidence directly.
 
 5. **Deployment**
    - `app.py` is the Streamlit entry point.
