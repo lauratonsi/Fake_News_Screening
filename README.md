@@ -121,6 +121,20 @@ python -m src.evaluate               # in-domain metrics table
 python -m src.evaluate --adversarial # out-of-domain benchmark
 ```
 
+## Deploy on Streamlit Cloud
+
+This repository is already configured for a standard Streamlit Cloud deploy.
+
+1. Connect the GitHub repository `lauratonsi/Fake_News_Screening`.
+2. Use `app.py` as the entry point.
+3. Keep the default branch as `main`.
+4. Let Streamlit install dependencies from `requirements.txt`.
+5. The runtime is pinned in `runtime.txt` and the app theme/server defaults are
+   set in `.streamlit/config.toml`.
+
+If the deployment succeeds, the demo should load the committed models from
+`models/` and run without requiring retraining.
+
 ## Honest limitations
 
 - English only; the training corpora essentially stop in 2020 — current events are out of domain.
