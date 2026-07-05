@@ -71,6 +71,23 @@ models that short factual claims about US politics *look like* fake-news bait.
 This is the temporal/stylistic bias surviving every mitigation — and the reason
 the demo presents itself as a screening aid, not a truth oracle.
 
+## Scope within the information-disorder taxonomy
+
+"Fake news" is a scientifically inadequate label: Wardle & Derakhshan's
+*Information Disorder* framework (Council of Europe, 2017) distinguishes
+**misinformation** (false, shared without harmful intent), **disinformation**
+(false, intentionally harmful) and **malinformation** (genuine content used to
+harm). A text classifier can only ever address the *content-falsity signal* of
+the first two — it is blind to intent, and by construction to malinformation,
+where the content is true. That is a second, structural reason (besides the
+measured out-of-domain accuracy) why this system is framed as a **screening
+aid inside a human process**, not an automated arbiter of truth.
+
+The versioned adversarial benchmark follows the same logic that cognitive
+security literature applies to institutions — *you cannot defend what you have
+not tested*: the 30 scenarios are kept in the repo as a permanent, repeatable
+stress test rather than a one-off experiment.
+
 ## Repository layout
 
 ```
