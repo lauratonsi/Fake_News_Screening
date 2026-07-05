@@ -102,7 +102,16 @@ def build_dataset(data_dir=config.DATA_DIR) -> pd.DataFrame:
 def train_test_frames(df: pd.DataFrame):
     """Stratified 80/20 split, then balance + boost the COVID slice on the
     training side only. The test set stays untouched (no duplicates, natural
-    class distribution), so every model is measured on the same clean data."""
+    class distribution), so every model is measured on the same clean data.
+
+    Requires a deduplicated frame (call ``build_dataset()`` first): splitting
+    before deduplication can put copies of the same article on both sides —
+    exactly the leakage this protocol exists to prevent — so it fails loudly
+    instead of silently."""
+    assert not df["full_text"].duplicated().any(), (
+        "train_test_frames() expects deduplicated input — call build_dataset() "
+        "first, or duplicate articles can leak across the train/test split."
+    )
     train_df, test_df = train_test_split(
         df,
         test_size=config.TEST_SIZE,

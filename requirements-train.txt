@@ -1,0 +1,7 @@
+# Extra dependencies needed ONLY to retrain from scratch (python -m src.train).
+# The deployed app (requirements.txt) does not need TensorFlow: production
+# inference runs the RNNs as TFLite via the lightweight ai-edge-litert
+# interpreter, not the full TensorFlow runtime (see src/predict.py).
+-r requirements.txt
+tensorflow==2.15.1
+tf-keras==2.15.1

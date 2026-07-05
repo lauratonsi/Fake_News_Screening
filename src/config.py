@@ -45,12 +45,21 @@ RNN_BATCH_SIZE = 16
 # --- Reference-corpus similarity heuristic ------------------------------------
 # A lookup against the texts the system already knows to be real or fake.
 # This is a heuristic support signal, NOT fact-checking: it can only recognise
-# claims similar to ones already present in the reference corpus.
+# claims *semantically similar* to ones already present in the reference
+# corpus (sentence embeddings, not literal word overlap — see src/rag.py).
+# Thresholds are calibrated empirically for this embedding model in
+# experiments/calibrate_rag_thresholds.py; re-run it if the model changes.
 REF_SNIPPET_CHARS = 300
-REF_TFIDF_FEATURES = 2_000
-REF_MATCH_THRESHOLD = 0.55   # minimum cosine similarity to count as a match
-REF_MARGIN = 0.10            # required gap between the two corpora
-REF_OVERRIDE_THRESHOLD = 0.75  # above this the match overrides the ensemble
+EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+REF_MATCH_THRESHOLD = 0.45   # minimum cosine similarity to count as a match
+REF_MARGIN = 0.05            # required gap between the two corpora
+# Empirically, semantic similarity does not separate "same claim, reworded"
+# from "same topic, different claim" nearly as cleanly as TF-IDF's near-
+# literal matches did: on the 30 adversarial scenarios, 3 of 4 wrong
+# reference-only calls scored 0.69-0.82 — well above the old 0.65 override
+# threshold. Overriding the ensemble is now reserved for near-verbatim
+# repeats of a known snippet, not merely topically-similar ones.
+REF_OVERRIDE_THRESHOLD = 0.90  # above this the match overrides the ensemble
 REF_BOOST = 0.25             # otherwise it only shifts the ensemble score
 
 # --- Live retrieval -------------------------------------------------------------
@@ -82,9 +91,12 @@ DISAGREEMENT_SPREAD = 0.40
 SVM_FILE = MODELS_DIR / "svm_tfidf.joblib"
 GRU_FILE = MODELS_DIR / "gru.keras"
 LSTM_FILE = MODELS_DIR / "lstm.keras"
+GRU_TFLITE_FILE = MODELS_DIR / "gru.tflite"
+LSTM_TFLITE_FILE = MODELS_DIR / "lstm.tflite"
 TOKENIZER_FILE = MODELS_DIR / "tokenizer.joblib"
 METRICS_FILE = MODELS_DIR / "metrics.json"
 REF_REAL_FILE = REFERENCE_DIR / "real.csv.gz"
 REF_FAKE_FILE = REFERENCE_DIR / "fake.csv.gz"
+REF_EMBEDDINGS_FILE = REFERENCE_DIR / "embeddings.npz"
 SCENARIOS_FILE = BENCHMARKS_DIR / "adversarial_scenarios.json"
 ADVERSARIAL_RESULTS_FILE = BENCHMARKS_DIR / "adversarial_results.json"

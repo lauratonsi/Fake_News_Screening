@@ -68,25 +68,37 @@ def train_svm(train_df, test_df):
     return proba
 
 
+def _export_tflite(model, path):
+    """Convert a trained Keras model to TFLite for lightweight production
+    inference (see src/predict.py — the deployed app never imports the full
+    TensorFlow runtime, only the ~10 MB ai-edge-litert interpreter)."""
+    import tensorflow as tf
+
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    tflite_model = converter.convert()
+    path.write_bytes(tflite_model)
+    print(f"    saved -> {path} ({len(tflite_model) / 1024:.0f} KB)")
+
+
 def train_rnns(train_df, test_df):
     import tf_keras  # noqa: F401  (ensures the legacy backend is present)
     from tf_keras.layers import Bidirectional, Dense, Dropout, Embedding, GRU, LSTM
     from tf_keras.models import Sequential
-    from tf_keras.preprocessing.sequence import pad_sequences
-    from tf_keras.preprocessing.text import Tokenizer
+
+    from .tokenizer import SimpleTokenizer, pad_sequences
 
     sample = train_df.sample(
         n=min(config.RNN_TRAIN_SAMPLE, len(train_df)), random_state=config.SEED
     )
     print(f">>> Training RNNs on a {len(sample)}-article subsample (CPU budget)...")
 
-    tokenizer = Tokenizer(num_words=config.VOCAB_SIZE, lower=True)
+    tokenizer = SimpleTokenizer(num_words=config.VOCAB_SIZE, lower=True)
     tokenizer.fit_on_texts(sample["full_text"].values)
     joblib.dump(tokenizer, config.TOKENIZER_FILE)
 
     def to_seq(texts):
         return pad_sequences(
-            tokenizer.texts_to_sequences(texts), maxlen=config.MAX_LEN, padding="post"
+            tokenizer.texts_to_sequences(texts), maxlen=config.MAX_LEN
         ).astype(np.int32)
 
     X_train = to_seq(sample["full_text"].values)
@@ -99,7 +111,9 @@ def train_rnns(train_df, test_df):
         model = Sequential(
             [
                 Embedding(config.VOCAB_SIZE, config.EMBEDDING_DIM, input_length=config.MAX_LEN),
-                Bidirectional(layer(config.RNN_UNITS)),
+                # unroll=True: MAX_LEN is fixed, and an unrolled RNN converts
+                # to plain TFLite ops (no Flex/SELECT_TF_OPS dependency needed).
+                Bidirectional(layer(config.RNN_UNITS, unroll=True)),
                 Dense(16, activation="relu"),
                 Dropout(0.5),
                 Dense(1, activation="sigmoid"),
@@ -116,6 +130,8 @@ def train_rnns(train_df, test_df):
         path = config.GRU_FILE if arch == "gru" else config.LSTM_FILE
         model.save(path)
         print(f"    saved -> {path}")
+        tflite_path = config.GRU_TFLITE_FILE if arch == "gru" else config.LSTM_TFLITE_FILE
+        _export_tflite(model, tflite_path)
         probas[arch] = model.predict(X_test, verbose=0)[:, 0]
     return probas
 
@@ -158,6 +174,9 @@ def main():
     print(f">>> Metrics written to {config.METRICS_FILE}")
 
     data.save_reference_corpus()
+
+    from . import rag
+    rag.build_and_save_embeddings()
 
 
 if __name__ == "__main__":

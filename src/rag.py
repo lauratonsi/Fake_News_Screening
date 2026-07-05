@@ -1,17 +1,24 @@
 """Reference-corpus retrieval for the screening demo.
 
-This is a retrieval-first support layer: it does not generate answers.
-It finds the closest known real/fake snippets for an input text and returns
-the best matching evidence together with a light verdict heuristic.
+Semantic retrieval-first support layer: it does not generate answers. It
+finds the closest known real/fake snippets for an input text using sentence
+embeddings — semantic similarity, not literal word overlap — and returns the
+best matching evidence together with a light verdict heuristic.
+
+Classification stays classical (TF-IDF + SVM/RNNs) by tested choice: on this
+dataset the fake/real signal is mostly surface style and source markers,
+which literal term-matching exploits and semantic embeddings are built to
+ignore (see experiments/embeddings_baseline.py and the README). Retrieval is
+a different task — finding *paraphrases* of a known claim regardless of
+wording — which is exactly what semantic embeddings are good at.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 from . import config
 
@@ -23,33 +30,78 @@ class RetrievalHit:
     text: str
 
 
-class ReferenceRAG:
-    """TF-IDF retrieval over the committed reference corpus."""
+def _normalize(matrix: np.ndarray) -> np.ndarray:
+    norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+    return matrix / np.clip(norms, 1e-9, None)
 
-    def __init__(self, real_file: Path | None = None, fake_file: Path | None = None):
+
+def build_and_save_embeddings(
+    real_file: Path | None = None,
+    fake_file: Path | None = None,
+    out_file: Path | None = None,
+) -> None:
+    """Encode the committed reference corpus once and cache it to disk.
+
+    Encoding ~68k snippets takes tens of minutes on CPU — far too slow to
+    redo on every app start — so this runs once during training/data prep
+    and the result (float16, well under GitHub's 100 MB file limit) is
+    committed alongside the existing real.csv.gz / fake.csv.gz snippets.
+    """
+    from sentence_transformers import SentenceTransformer
+
+    real_file = real_file or config.REF_REAL_FILE
+    fake_file = fake_file or config.REF_FAKE_FILE
+    out_file = out_file or config.REF_EMBEDDINGS_FILE
+
+    real = pd.read_csv(real_file)["text"].fillna("").tolist()
+    fake = pd.read_csv(fake_file)["text"].fillna("").tolist()
+
+    model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
+    print(f">>> Encoding reference corpus ({len(real)} real + {len(fake)} fake snippets)...")
+    real_emb = model.encode(real, batch_size=64, show_progress_bar=True).astype(np.float16)
+    fake_emb = model.encode(fake, batch_size=64, show_progress_bar=True).astype(np.float16)
+
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(out_file, real=real_emb, fake=fake_emb)
+    print(f">>> Reference embeddings saved -> {out_file}")
+
+
+class ReferenceRAG:
+    """Sentence-embedding retrieval over the committed reference corpus."""
+
+    def __init__(
+        self,
+        real_file: Path | None = None,
+        fake_file: Path | None = None,
+        embeddings_file: Path | None = None,
+    ):
         self.real_file = real_file or config.REF_REAL_FILE
         self.fake_file = fake_file or config.REF_FAKE_FILE
-        self.enabled = self.real_file.exists() and self.fake_file.exists()
-        self.vectorizer = None
+        self.embeddings_file = embeddings_file or config.REF_EMBEDDINGS_FILE
+        self.enabled = (
+            self.real_file.exists() and self.fake_file.exists() and self.embeddings_file.exists()
+        )
+        self.model = None
         self.real_matrix = None
         self.fake_matrix = None
-        self.real_texts = []
-        self.fake_texts = []
+        self.real_texts: list[str] = []
+        self.fake_texts: list[str] = []
 
         if not self.enabled:
             return
 
-        real = pd.read_csv(self.real_file)["text"].fillna("")
-        fake = pd.read_csv(self.fake_file)["text"].fillna("")
-        self.real_texts = real.tolist()
-        self.fake_texts = fake.tolist()
+        self.real_texts = pd.read_csv(self.real_file)["text"].fillna("").tolist()
+        self.fake_texts = pd.read_csv(self.fake_file)["text"].fillna("").tolist()
 
-        self.vectorizer = TfidfVectorizer(max_features=config.REF_TFIDF_FEATURES)
-        self.vectorizer.fit(pd.concat([real, fake], ignore_index=True))
-        self.real_matrix = self.vectorizer.transform(real)
-        self.fake_matrix = self.vectorizer.transform(fake)
+        cached = np.load(self.embeddings_file)
+        self.real_matrix = _normalize(cached["real"].astype(np.float32))
+        self.fake_matrix = _normalize(cached["fake"].astype(np.float32))
 
-    def _top_hits(self, label: str, scores, texts, top_k: int) -> list[RetrievalHit]:
+        from sentence_transformers import SentenceTransformer
+
+        self.model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
+
+    def _top_hits(self, label: str, scores: np.ndarray, texts: list[str], top_k: int) -> list[RetrievalHit]:
         if len(scores) == 0:
             return []
         top_idx = scores.argsort()[::-1][:top_k]
@@ -68,11 +120,11 @@ class ReferenceRAG:
         if not self.enabled:
             return result
 
-        snippet = text[: config.REF_SNIPPET_CHARS].lower().strip()
-        vec = self.vectorizer.transform([snippet])
+        snippet = text[: config.REF_SNIPPET_CHARS].strip()
+        vec = self.model.encode([snippet], normalize_embeddings=True)[0].astype(np.float32)
 
-        real_scores = cosine_similarity(vec, self.real_matrix).ravel()
-        fake_scores = cosine_similarity(vec, self.fake_matrix).ravel()
+        real_scores = self.real_matrix @ vec
+        fake_scores = self.fake_matrix @ vec
 
         best_real = float(real_scores.max()) if len(real_scores) else 0.0
         best_fake = float(fake_scores.max()) if len(fake_scores) else 0.0
@@ -86,7 +138,7 @@ class ReferenceRAG:
                 {
                     "verdict": "FAKE",
                     "score": best_fake,
-                    "message": f"closest match is a known fake snippet ({best_fake:.0%})",
+                    "message": f"closest match is a known fake snippet ({best_fake:.0%} semantic similarity)",
                 }
             )
         elif best_real > config.REF_MATCH_THRESHOLD and best_real > best_fake + config.REF_MARGIN:
@@ -94,7 +146,7 @@ class ReferenceRAG:
                 {
                     "verdict": "REAL",
                     "score": best_real,
-                    "message": f"closest match is a known real snippet ({best_real:.0%})",
+                    "message": f"closest match is a known real snippet ({best_real:.0%} semantic similarity)",
                 }
             )
         else:
