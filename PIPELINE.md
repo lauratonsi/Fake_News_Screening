@@ -36,7 +36,8 @@ flowchart LR
 
 5. **Deployment**
    - `app.py` is the Streamlit entry point.
-   - `requirements.txt`, `runtime.txt`, and `.streamlit/config.toml` make the app deployable on Streamlit Community Cloud.
+   - `requirements.txt` and `.streamlit/config.toml` make the app deployable on Streamlit Community Cloud.
+   - In the Streamlit Cloud app settings, select Python 3.11 so TensorFlow 2.15 can install correctly.
 
 ## Figures
 

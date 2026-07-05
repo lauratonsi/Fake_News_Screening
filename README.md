@@ -152,8 +152,10 @@ This repository is already configured for a standard Streamlit Cloud deploy.
 2. Use `app.py` as the entry point.
 3. Keep the default branch as `main`.
 4. Let Streamlit install dependencies from `requirements.txt`.
-5. The runtime is pinned in `runtime.txt` and the app theme/server defaults are
-   set in `.streamlit/config.toml`.
+5. In **Advanced settings**, set the Python version to **3.11**. TensorFlow
+   2.15 does not work on Python 3.13+ and the app will fail to install if
+   Streamlit uses the newer default interpreter.
+6. The app theme/server defaults are set in `.streamlit/config.toml`.
 
 If the deployment succeeds, the demo should load the committed models from
 `models/` and run without requiring retraining.
