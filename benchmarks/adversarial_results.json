@@ -1,13 +1,13 @@
 {
-  "created": "2026-07-05T20:32:59+00:00",
+  "created": "2026-07-06T06:30:02+00:00",
   "system": "SVM + Bi-GRU + Bi-LSTM ensemble with reference-corpus heuristic",
   "summary": {
     "covid": {
       "n": 10,
-      "accuracy": 1.0,
-      "precision_fake": 1.0,
+      "accuracy": 0.9,
+      "precision_fake": 0.8333,
       "recall_fake": 1.0,
-      "false_positives": 0,
+      "false_positives": 1,
       "false_negatives": 0,
       "flagged_for_review": 3
     },
@@ -31,10 +31,10 @@
     },
     "overall": {
       "n": 30,
-      "accuracy": 0.8333,
-      "precision_fake": 0.75,
+      "accuracy": 0.8,
+      "precision_fake": 0.7143,
       "recall_fake": 1.0,
-      "false_positives": 5,
+      "false_positives": 6,
       "false_negatives": 0,
       "flagged_for_review": 8
     }
@@ -51,7 +51,7 @@
         "gru": 0.974,
         "lstm": 0.993
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 73% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -66,7 +66,7 @@
         "gru": 0.999,
         "lstm": 0.999
       },
-      "reference_message": "closest match is a known fake snippet (84% semantic similarity)",
+      "reference_message": "closest match is a known fake claim (84% semantic similarity)",
       "needs_review": false,
       "correct": true
     },
@@ -81,7 +81,7 @@
         "gru": 0.997,
         "lstm": 0.999
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 72% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -96,7 +96,7 @@
         "gru": 0.999,
         "lstm": 0.999
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 76% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -105,13 +105,13 @@
       "label": "FAKE",
       "text": "Obama wiretapped Trump Tower during the 2016 election campaign.",
       "predicted": "FAKE",
-      "fake_probability": 0.746,
+      "fake_probability": 0.996,
       "model_scores": {
         "svm": 0.998,
         "gru": 0.998,
         "lstm": 0.991
       },
-      "reference_message": "closest match is a known real snippet (82% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 82% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -120,13 +120,13 @@
       "label": "REAL",
       "text": "Donald Trump won the 2016 presidential election defeating Hillary Clinton.",
       "predicted": "FAKE",
-      "fake_probability": 0.745,
+      "fake_probability": 0.995,
       "model_scores": {
         "svm": 0.999,
         "gru": 0.993,
         "lstm": 0.993
       },
-      "reference_message": "closest match is a known real snippet (79% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 79% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": false
     },
@@ -141,7 +141,7 @@
         "gru": 1.0,
         "lstm": 0.998
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 89% similarity (topical, not a verdict)",
       "needs_review": true,
       "correct": false
     },
@@ -156,7 +156,7 @@
         "gru": 0.54,
         "lstm": 0.472
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 65% similarity (topical, not a verdict)",
       "needs_review": true,
       "correct": true
     },
@@ -171,7 +171,7 @@
         "gru": 0.0,
         "lstm": 0.0
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 83% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -186,7 +186,7 @@
         "gru": 1.0,
         "lstm": 0.999
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 70% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": false
     },
@@ -195,13 +195,13 @@
       "label": "FAKE",
       "text": "The COVID-19 vaccine changes your DNA and will be inherited by your children.",
       "predicted": "FAKE",
-      "fake_probability": 0.651,
+      "fake_probability": 0.901,
       "model_scores": {
         "svm": 0.789,
         "gru": 0.999,
         "lstm": 0.916
       },
-      "reference_message": "closest match is a known real snippet (69% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 69% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -216,7 +216,7 @@
         "gru": 1.0,
         "lstm": 1.0
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 72% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -231,7 +231,7 @@
         "gru": 1.0,
         "lstm": 1.0
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 68% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -246,7 +246,7 @@
         "gru": 1.0,
         "lstm": 1.0
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 64% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -261,7 +261,7 @@
         "gru": 0.879,
         "lstm": 0.991
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 60% similarity (topical, not a verdict)",
       "needs_review": true,
       "correct": true
     },
@@ -270,13 +270,13 @@
       "label": "REAL",
       "text": "Multiple countries temporarily suspended specific COVID-19 vaccines after reports of rare side effects.",
       "predicted": "REAL",
-      "fake_probability": 0.0,
+      "fake_probability": 0.081,
       "model_scores": {
         "svm": 0.235,
         "gru": 0.005,
         "lstm": 0.001
       },
-      "reference_message": "closest match is a known real snippet (65% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 65% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -284,29 +284,29 @@
       "domain": "covid",
       "label": "REAL",
       "text": "Health authorities updated the definition of a COVID-19 case as testing capacity and knowledge improved.",
-      "predicted": "REAL",
-      "fake_probability": 0.431,
+      "predicted": "FAKE",
+      "fake_probability": 0.681,
       "model_scores": {
         "svm": 0.048,
         "gru": 0.999,
         "lstm": 0.996
       },
-      "reference_message": "closest match is a known real snippet (66% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 66% similarity (topical, not a verdict)",
       "needs_review": true,
-      "correct": true
+      "correct": false
     },
     {
       "domain": "covid",
       "label": "REAL",
       "text": "During the pandemic, some governments asked social media platforms to remove content considered dangerous to public health.",
       "predicted": "REAL",
-      "fake_probability": 0.0,
+      "fake_probability": 0.021,
       "model_scores": {
         "svm": 0.056,
         "gru": 0.001,
         "lstm": 0.005
       },
-      "reference_message": "closest match is a known real snippet (60% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 60% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -315,13 +315,13 @@
       "label": "REAL",
       "text": "Several studies confirmed that COVID-19 can cause long-term complications even in young adults.",
       "predicted": "REAL",
-      "fake_probability": 0.234,
+      "fake_probability": 0.484,
       "model_scores": {
         "svm": 0.698,
         "gru": 0.742,
         "lstm": 0.012
       },
-      "reference_message": "closest match is a known real snippet (71% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 71% similarity (topical, not a verdict)",
       "needs_review": true,
       "correct": true
     },
@@ -330,13 +330,13 @@
       "label": "REAL",
       "text": "International investigations found that some early COVID statistics were incomplete or delayed, creating confusion about the real impact.",
       "predicted": "REAL",
-      "fake_probability": 0.0,
+      "fake_probability": 0.006,
       "model_scores": {
         "svm": 0.014,
         "gru": 0.005,
         "lstm": 0.0
       },
-      "reference_message": "closest match is a known real snippet (65% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 65% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -351,7 +351,7 @@
         "gru": 0.733,
         "lstm": 0.141
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 60% similarity (topical, not a verdict)",
       "needs_review": true,
       "correct": true
     },
@@ -366,7 +366,7 @@
         "gru": 1.0,
         "lstm": 1.0
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 44% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -381,7 +381,7 @@
         "gru": 1.0,
         "lstm": 0.999
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 37% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": false
     },
@@ -390,13 +390,13 @@
       "label": "FAKE",
       "text": "A viral video claims that the last World Cup final was replayed in secret because the result was manipulated.",
       "predicted": "FAKE",
-      "fake_probability": 0.75,
+      "fake_probability": 1.0,
       "model_scores": {
         "svm": 1.0,
         "gru": 1.0,
         "lstm": 1.0
       },
-      "reference_message": "closest match is a known real snippet (49% semantic similarity)",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 49% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -411,7 +411,7 @@
         "gru": 0.972,
         "lstm": 0.93
       },
-      "reference_message": "closest match is a known fake snippet (77% semantic similarity)",
+      "reference_message": "closest match is a known fake claim (77% semantic similarity)",
       "needs_review": false,
       "correct": false
     },
@@ -426,7 +426,7 @@
         "gru": 1.0,
         "lstm": 0.997
       },
-      "reference_message": "closest match is a known fake snippet (56% semantic similarity)",
+      "reference_message": "closest match is a known fake claim (56% semantic similarity)",
       "needs_review": false,
       "correct": true
     },
@@ -441,7 +441,7 @@
         "gru": 0.194,
         "lstm": 0.216
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 43% similarity (topical, not a verdict)",
       "needs_review": false,
       "correct": true
     },
@@ -456,7 +456,7 @@
         "gru": 0.998,
         "lstm": 0.997
       },
-      "reference_message": "closest match is a known fake snippet (63% semantic similarity)",
+      "reference_message": "closest match is a known fake claim (63% semantic similarity)",
       "needs_review": false,
       "correct": true
     },
@@ -471,7 +471,7 @@
         "gru": 0.028,
         "lstm": 0.95
       },
-      "reference_message": "no strong match in the reference corpus",
+      "reference_message": "no strong match \u2014 closest known snippet is real at 49% similarity (topical, not a verdict)",
       "needs_review": true,
       "correct": true
     },
@@ -486,7 +486,7 @@
         "gru": 1.0,
         "lstm": 0.996
       },
-      "reference_message": "closest match is a known fake snippet (46% semantic similarity)",
+      "reference_message": "closest match is a known fake claim (46% semantic similarity)",
       "needs_review": true,
       "correct": true
     }

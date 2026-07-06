@@ -143,24 +143,39 @@ class ReferenceRAG:
         evidence += self._top_hits("FAKE", fake_scores, self.fake_texts, top_k)
         evidence = sorted(evidence, key=lambda hit: hit.score, reverse=True)[: 2 * top_k]
 
+        # Asymmetric on purpose. Matching a *known fabricated claim* is real
+        # evidence of fakeness, so a fake-side match counts from a modest
+        # similarity. Matching a *known real article* is NOT evidence of truth:
+        # a false claim shares its topic with genuine reporting all the time
+        # ("the vaccine alters your DNA" sits right next to real articles about
+        # COVID genetics), so a real-side match only asserts REAL when it is
+        # near-verbatim — the input essentially *is* a stored real article.
+        # Everything in between is surfaced as neutral evidence, not a verdict,
+        # so the demo never shows a green "known REAL" under a FAKE headline.
         if best_fake > config.REF_MATCH_THRESHOLD and best_fake > best_real + config.REF_MARGIN:
             result.update(
                 {
                     "verdict": "FAKE",
                     "score": best_fake,
-                    "message": f"closest match is a known fake snippet ({best_fake:.0%} semantic similarity)",
+                    "message": f"closest match is a known fake claim ({best_fake:.0%} semantic similarity)",
                 }
             )
-        elif best_real > config.REF_MATCH_THRESHOLD and best_real > best_fake + config.REF_MARGIN:
+        elif best_real > config.REF_OVERRIDE_THRESHOLD and best_real > best_fake + config.REF_MARGIN:
             result.update(
                 {
                     "verdict": "REAL",
                     "score": best_real,
-                    "message": f"closest match is a known real snippet ({best_real:.0%} semantic similarity)",
+                    "message": f"near-verbatim match to a known real article ({best_real:.0%} semantic similarity)",
                 }
             )
         else:
-            result["message"] = "no strong match in the reference corpus"
+            top_label = "fake" if best_fake >= best_real else "real"
+            top_score = max(best_fake, best_real)
+            result["score"] = top_score
+            result["message"] = (
+                f"no strong match — closest known snippet is {top_label} "
+                f"at {top_score:.0%} similarity (topical, not a verdict)"
+            )
 
         result["evidence"] = [
             {"label": hit.label, "score": round(hit.score, 4), "text": hit.text}

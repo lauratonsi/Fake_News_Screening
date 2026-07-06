@@ -47,7 +47,9 @@ flowchart LR
 5. **Claim-level retrieval**
    - Split the input into claim-like sentences.
    - Retrieve evidence independently for each claim.
-   - Surface supported, refuted, and unsupported claims in the UI.
+   - Label each claim by the evidence found — matches a known false claim,
+     matches known reporting, or no close match — not by an asserted truth
+     verdict.
 
 6. **Live retrieval fallback**
    - Query a free external source (Google Fact Check API when a key is available, otherwise GDELT).

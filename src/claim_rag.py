@@ -1,8 +1,12 @@
 """Claim-level retrieval analysis built on top of the reference corpus.
 
 This is the first step toward a true RAG-style workflow: the input is split
-into claim-like sentences, each claim is retrieved independently, and the demo
-can show which statements are supported, refuted, or unsupported.
+into claim-like sentences and each claim is retrieved independently, so the
+demo can show, per claim, the closest known snippets and whether they were
+labelled real or fake. These are *evidence* labels ("matches a known false
+claim", "matches known reporting", "no close match"), not truth judgements:
+only a live fact-check verdict is an actual verdict here — similarity to a
+stored snippet is not verification.
 """
 from __future__ import annotations
 
@@ -36,9 +40,9 @@ def analyze_claims(text: str, retriever, live_retriever=None, top_k: int = 2) ->
         claims = [str(text).strip()]
 
     analyzed = []
-    supported = 0
-    refuted = 0
-    unknown = 0
+    matches_fake = 0
+    matches_real = 0
+    no_match = 0
     live_sources = []
 
     for index, claim in enumerate(claims):
@@ -52,18 +56,21 @@ def analyze_claims(text: str, retriever, live_retriever=None, top_k: int = 2) ->
         if live_hit and live_hit.get("evidence"):
             live_sources.append(live_hit["source"])
 
-        # A live fact-check verdict is the highest-signal source; the committed
-        # reference corpus decides only when live evidence is absent or neutral.
+        # These statuses describe the EVIDENCE we retrieved, not a truth
+        # judgement of the claim. A live fact-check verdict (from an actual
+        # fact-checker) is the only real verdict here and takes precedence;
+        # otherwise we only report that the claim is close to a stored snippet
+        # that was labelled real or fake, which is similarity, not verification.
         live_verdict = live_hit.get("verdict") if live_hit else None
-        if live_verdict == "REAL" or (live_verdict is None and hit["verdict"] == "REAL"):
-            status = "SUPPORTED"
-            supported += 1
-        elif live_verdict == "FAKE" or (live_verdict is None and hit["verdict"] == "FAKE"):
-            status = "REFUTED"
-            refuted += 1
+        if live_verdict == "FAKE" or (live_verdict is None and hit["verdict"] == "FAKE"):
+            status = "MATCHES_KNOWN_FALSE"
+            matches_fake += 1
+        elif live_verdict == "REAL" or (live_verdict is None and hit["verdict"] == "REAL"):
+            status = "MATCHES_KNOWN_REAL"
+            matches_real += 1
         else:
-            status = "UNSUPPORTED"
-            unknown += 1
+            status = "NO_CLOSE_MATCH"
+            no_match += 1
 
         analyzed.append(
             {
@@ -77,25 +84,14 @@ def analyze_claims(text: str, retriever, live_retriever=None, top_k: int = 2) ->
             }
         )
 
-    if refuted > supported and refuted > 0:
-        verdict = "FAKE"
-        message = "At least one claim is strongly refuted by the reference corpus."
-    elif supported > refuted and supported > 0:
-        verdict = "REAL"
-        message = "The claims are closer to known real snippets than to fake ones."
-    else:
-        verdict = None
-        message = "The claims are mostly unsupported by the current reference corpus."
-
     return {
-        "verdict": verdict,
-        "message": message,
+        "message": "Evidence retrieved per claim — similarity to known snippets, not a truth check.",
         "source": live_sources[0] if live_sources else None,
         "claims": analyzed,
         "summary": {
             "claims_total": len(analyzed),
-            "supported": supported,
-            "refuted": refuted,
-            "unsupported": unknown,
+            "matches_fake": matches_fake,
+            "matches_real": matches_real,
+            "no_match": no_match,
         },
     }

@@ -83,7 +83,15 @@ GDELT_MIN_INTERVAL = 5.0     # seconds between GDELT requests (API rate limit)
 # article or a fact-check, so sending the raw claim as the query starves
 # both GDELT and Google Fact Check of hits. Queries are reduced to their
 # most search-relevant terms instead (see external_retrieval._extract_keywords).
-LIVE_KEYWORD_TERMS = 8
+#
+# GDELT ANDs every term together, so this must stay SMALL: 8 terms meant no
+# single article ever contained all of them and *every* live query returned
+# nothing, even for current topics (e.g. a Federal Reserve / inflation claim).
+# A 2-term query verifiably returns real recent coverage; we keep a few of the
+# most distinctive terms (proper-noun phrases first, then the longest content
+# words — see external_retrieval._extract_keywords) to stay specific without
+# over-constraining the AND.
+LIVE_KEYWORD_TERMS = 3
 # GDELT's DOC 2.0 API archive starts ~Feb 2017. A 1-year window (the
 # previous value) makes it mathematically impossible to find coverage of
 # anything older than 1 year ago — which is most of this project's demo

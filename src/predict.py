@@ -75,10 +75,10 @@ class ScreeningSystem:
         scores = self.model_scores(text)
         reference = self.reference_check(text)
         claim_analysis = analyze_claims(text, self.reference, self.live_retriever) if self.reference is not None else {
-            "verdict": None,
             "message": "reference corpus disabled",
+            "source": None,
             "claims": [],
-            "summary": {"claims_total": 0, "supported": 0, "refuted": 0, "unsupported": 0},
+            "summary": {"claims_total": 0, "matches_fake": 0, "matches_real": 0, "no_match": 0},
         }
 
         verdict_info = combine_verdict(scores, reference)
@@ -94,18 +94,21 @@ def combine_verdict(scores: dict, reference: dict) -> dict:
     score = float(np.mean(list(scores.values())))
     spread = max(scores.values()) - min(scores.values())
 
+    # Asymmetric by design (see src/rag.py): a fake-side match is evidence of
+    # fakeness and can override or boost the ensemble; a real-side match only
+    # reaches this function when it is near-verbatim (it never fires on mere
+    # topical similarity), and even then it only overrides — a weak real match
+    # must not quietly pull a text toward "true" just for sharing a topic with
+    # genuine reporting.
     if reference["verdict"] and reference["score"] > config.REF_OVERRIDE_THRESHOLD:
         verdict = reference["verdict"]
         score = 1.0 if verdict == "FAKE" else 0.0
-        reason = "reference-corpus override (strong match)"
+        kind = "known fake" if verdict == "FAKE" else "known real"
+        reason = f"reference-corpus override (near-verbatim {kind} match)"
     elif reference["verdict"] == "FAKE":
         score = min(1.0, score + config.REF_BOOST)
         verdict = "FAKE" if score > 0.5 else "REAL"
-        reason = "ensemble + reference-corpus boost"
-    elif reference["verdict"] == "REAL":
-        score = max(0.0, score - config.REF_BOOST)
-        verdict = "FAKE" if score > 0.5 else "REAL"
-        reason = "ensemble + reference-corpus boost"
+        reason = "ensemble + reference match to a known fake claim"
     else:
         verdict = "FAKE" if score > 0.5 else "REAL"
         reason = "ensemble consensus"

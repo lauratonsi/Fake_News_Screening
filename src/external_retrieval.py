@@ -40,6 +40,8 @@ they we you i not no do does did has have had will would can could should
 may might said says according also after before during over into about than
 then which who whom what when where how why up down out if so such some
 any all most
+monday tuesday wednesday thursday friday saturday sunday
+january february march april may june july august september october november december
 """.split())
 
 _WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]+")
@@ -68,10 +70,18 @@ def _extract_keywords(text: str, max_terms: int = config.LIVE_KEYWORD_TERMS) -> 
         else:
             i += 1
 
-    content_words = [
-        w for w in words
-        if len(w) > 3 and w.lower() not in _STOPWORDS and not w[0].isupper()
-    ]
+    # Longer content words are, on average, rarer and more discriminative than
+    # short common ones ("regulations"/"inflation" beat "announced"/"support"),
+    # so rank them by length: with only a handful of AND-ed terms allowed, the
+    # few we keep should be the most distinctive ones.
+    content_words = sorted(
+        (
+            w for w in words
+            if len(w) > 3 and w.lower() not in _STOPWORDS and not w[0].isupper()
+        ),
+        key=len,
+        reverse=True,
+    )
 
     seen: set[str] = set()
     terms = []
@@ -197,13 +207,45 @@ class ExternalEvidenceRetriever:
         url = f"https://api.gdeltproject.org/api/v2/doc/doc?{params}"
 
         try:
-            payload = _safe_fetch_json(url, timeout=self.timeout_seconds)
+            with urlopen(url, timeout=self.timeout_seconds) as response:
+                raw = response.read().decode("utf-8", errors="replace")
         except Exception as exc:
             return {
                 "source": "gdelt",
                 "verdict": None,
                 "score": 0.0,
                 "message": f"GDELT unavailable: {exc}",
+                "evidence": [],
+            }
+
+        # GDELT's free shared endpoint answers with a plain-text notice (NOT
+        # JSON) when it is rate-limited. json.loads() then throws and the old
+        # code swallowed it as a generic failure, so the demo just showed
+        # nothing — indistinguishable from "no matches". Detect it and say so.
+        stripped = raw.lstrip()
+        if not stripped.startswith("{"):
+            limited = "limit requests" in raw.lower() or "rate" in raw.lower()
+            return {
+                "source": "gdelt",
+                "verdict": None,
+                "score": 0.0,
+                "message": (
+                    "GDELT is rate-limited right now (shared free endpoint, "
+                    "~1 request / 5 s) — try again in a few seconds."
+                    if limited
+                    else "GDELT returned an unexpected (non-JSON) response."
+                ),
+                "evidence": [],
+            }
+
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            return {
+                "source": "gdelt",
+                "verdict": None,
+                "score": 0.0,
+                "message": "GDELT returned an unexpected response.",
                 "evidence": [],
             }
 
@@ -239,7 +281,13 @@ class ExternalEvidenceRetriever:
             return google
 
         gdelt = self._query_gdelt(text)
-        if gdelt["evidence"]:
+        # Return GDELT's own result when it has evidence OR when it has a
+        # meaningful non-"no matches" message (rate-limited / unavailable), so
+        # that state reaches the UI instead of a misleading generic fallback.
+        if gdelt["evidence"] or any(
+            token in gdelt["message"].lower()
+            for token in ("rate-limited", "unavailable", "unexpected")
+        ):
             return gdelt
 
         return {

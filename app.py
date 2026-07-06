@@ -30,11 +30,12 @@ with st.sidebar:
         """
 1. **Ensemble** — three models trained on ISOT + WELFake + COVID-19
    score the text; the average is the fake probability.
-2. **Reference corpus** — the input is compared, by semantic embedding
-    similarity, with snippets of known real/fake articles (so reworded
-    claims still match). A near-verbatim match overrides the ensemble, a
-    weaker one only shifts the score, and the closest retrieved snippets
-    are shown.
+2. **Most similar known articles** — the input is compared, by semantic
+    embedding similarity, with snippets of known real/fake articles (so
+    reworded claims still match). Matching a known *fake* claim is evidence
+    of fakeness and boosts the score; matching real reporting is shown as
+    evidence only, since sharing a topic with true news is not proof — it
+    sways the verdict solely on a near-verbatim match.
 3. **Agreement check** — if the models disagree strongly, the verdict
    is flagged for human review.
         """
@@ -114,39 +115,50 @@ if st.button("Analyze", type="primary") and text.strip():
         for name, score in result["model_scores"].items():
             st.progress(min(max(score, 0.0), 1.0), text=f"**{name.upper()}** — {score:.1%} fake probability")
     with col2:
-        st.subheader("Reference corpus (heuristic)")
+        st.subheader("Most similar known articles")
         message = result["reference"]["message"]
-        if result["reference"]["verdict"] == "FAKE":
+        ref_verdict = result["reference"]["verdict"]
+        if ref_verdict == "FAKE":
             st.error(f"⛔ {message}")
-        elif result["reference"]["verdict"] == "REAL":
+        elif ref_verdict == "REAL":
             st.success(f"✅ {message}")
         else:
             st.info(f"ℹ️ {message}")
+        for hit in result["reference"]["evidence"][:3]:
+            tag = "🟥 FAKE" if hit["label"] == "FAKE" else "🟩 REAL"
+            snippet = hit["text"][:120].strip() or "(empty snippet)"
+            st.markdown(f"- **{tag}** ({hit['score']:.0%}) — {snippet}")
         st.caption(
-            "Retrieval against articles already known to be real or fake. "
-            "This is a support signal, not fact-checking."
+            "The closest snippets the system has already seen, with the label "
+            "they carried. This is semantic *similarity*, not fact-checking — "
+            "sharing a topic with real reporting is not proof a claim is true."
         )
 
     claim_analysis = result.get("claim_analysis", {})
     claims = claim_analysis.get("claims", [])
     if claims:
         st.subheader("Claim-level retrieval")
+        st.caption(
+            "Per claim, the closest known snippets and whether they were "
+            "labelled real or fake. These are **evidence** labels, not a truth "
+            "check — only a live fact-check (below) is an actual verdict."
+        )
         summary = claim_analysis.get("summary", {})
         cols = st.columns(4)
         cols[0].metric("Claims", summary.get("claims_total", 0))
-        cols[1].metric("Supported", summary.get("supported", 0))
-        cols[2].metric("Refuted", summary.get("refuted", 0))
-        cols[3].metric("Unsupported", summary.get("unsupported", 0))
+        cols[1].metric("Match known false", summary.get("matches_fake", 0))
+        cols[2].metric("Match known real", summary.get("matches_real", 0))
+        cols[3].metric("No close match", summary.get("no_match", 0))
 
         with st.expander("Claim-by-claim evidence", expanded=False):
             for item in claims:
                 status = item["status"]
-                if status == "SUPPORTED":
-                    st.success(f"SUPPORTED — {item['claim']}")
-                elif status == "REFUTED":
-                    st.error(f"REFUTED — {item['claim']}")
+                if status == "MATCHES_KNOWN_FALSE":
+                    st.error(f"⛔ Matches a known FALSE claim — {item['claim']}")
+                elif status == "MATCHES_KNOWN_REAL":
+                    st.success(f"✅ Matches known REAL reporting — {item['claim']}")
                 else:
-                    st.info(f"UNSUPPORTED — {item['claim']}")
+                    st.info(f"ℹ️ No close match — {item['claim']}")
                 st.caption(f"{item['message']} | score {item['score']:.1%}")
                 for hit in item.get("evidence", [])[:2]:
                     st.markdown(f"- **{hit['label']}** ({hit['score']:.1%}): {hit['text']}")

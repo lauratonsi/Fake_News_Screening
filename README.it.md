@@ -13,12 +13,13 @@ Streamlit**.
 Demo live: https://fake-news-screening.streamlit.app/
 
 > **Il dato onesto:** l'ensemble ottiene **94,6%** su un test set in-domain
-> senza leakage e **83,3%** su 30 scenari adversarial fuori dominio. Il
-> divario si è ridotto molto (era 23,6 punti, ora 11,3) da quando il
-> retrieval è passato dalla sovrapposizione letterale di parole a veri
-> embeddings di frase — vedi *"Due usi molto diversi degli embeddings"* più
-> sotto per capire perché quell'upgrade ha aiutato il retrieval ma avrebbe
-> danneggiato la classificazione.
+> senza leakage e **80,0%** su 30 scenari adversarial fuori dominio, con
+> **zero falsi negativi** — non lascia mai passare una bufala; ogni errore è
+> un falso positivo troppo prudente su un'affermazione vera. Il layer di
+> retrieval serve a *trovare* i claim veri/falsi noti più simili, non ad
+> affermare la verità partendo da una vicinanza tematica — vedi *"Due usi
+> molto diversi degli embeddings"* più sotto per capire perché questa
+> distinzione conta e quanto costa.
 
 ## Il problema del "99% di accuratezza"
 
@@ -64,8 +65,9 @@ documenta perché quei numeri sono un campanello d'allarme, non un risultato:
    esplicitamente le evidenze recuperate.
 5. **Retrieval a livello di claim** — l'input è diviso in frasi simili a
    affermazioni verificabili, e ogni claim viene recuperato in modo
-   indipendente, così l'interfaccia può mostrare affermazioni supportate,
-   confutate o non supportate.
+   indipendente, così l'interfaccia può mostrare, per ciascun claim, se
+   corrisponde a un'affermazione falsa nota, a un articolo reale noto, o se
+   non ha corrispondenze — etichette di *evidenza*, non giudizi di verità.
 6. **Fallback di retrieval live** — i primi claim vengono controllati anche
    su fonti live gratuite (Google Fact Check quando è configurata una chiave
    API, altrimenti GDELT, con rate limiting). Un verdetto di fact-checking
@@ -118,20 +120,20 @@ flowchart LR
 | Dominio | Accuratezza | Falsi positivi | Falsi negativi | Segnalati per revisione |
 |---|---|---|---|---|
 | Politica | 70% | 3 | 0 | 2 |
-| COVID | 100% | 0 | 0 | 3 |
+| COVID | 90% | 1 | 0 | 3 |
 | Misto | 80% | 2 | 0 | 3 |
-| **Totale** | **83,3%** | 5 | 0 | 8 |
+| **Totale** | **80,0%** | 6 | 0 | 8 |
 
-Passare il livello di retrieval da TF-IDF a embeddings semantici (vedi sotto)
-ha portato questo numero dal 70% all'83,3% e ha eliminato ogni falso
-negativo — gli errori rimasti sono **falsi positivi su affermazioni
-politiche vere** ("Obama ha servito due mandati…" → FAKE): la finestra di
-addestramento 2015–2017 ha insegnato ai classificatori che brevi
-affermazioni fattuali sulla politica USA *assomigliano* a esche da fake
-news, e nessuno dei livelli di retrieval ha mai visto quella specifica
-frase vera. È il bias temporale/stilistico che sopravvive a ogni
-mitigazione — ed è il motivo per cui la demo si presenta come un aiuto allo
-screening, non come un oracolo di verità.
+Ogni errore è un **falso positivo su un'affermazione vera** ("Donald Trump ha
+vinto le elezioni del 2016…" → FAKE): la finestra di addestramento 2015–2017
+ha insegnato ai classificatori che brevi affermazioni fattuali sulla politica
+USA *assomigliano* a esche da fake news, e il layer di retrieval
+deliberatamente non le "salva" più trattando un articolo reale sullo stesso
+tema come una prova (vedi la sezione successiva). È il bias temporale/stilistico
+che sopravvive a ogni mitigazione — il motivo per cui la demo si presenta come
+un aiuto allo screening, non come un oracolo di verità. Ciò che conta per uno
+strumento anti-disinformazione è l'altra colonna: **zero falsi negativi**,
+nessuna bufala lasciata passare.
 
 ## Cosa dicono i grafici
 
@@ -163,7 +165,7 @@ più un classificatore lineare calibrato, addestrato e valutato sullo
 
 | | In-domain | Fuori dominio (30 scenari) |
 |---|---|---|
-| Ensemble attuale (TF-IDF + SVM/GRU/LSTM) | 94,6% | 83,3% |
+| Ensemble attuale (TF-IDF + SVM/GRU/LSTM) | 94,6% | 80,0% |
 | Embeddings MiniLM + classificatore lineare | 88,5% | 60% |
 
 Il classificatore basato su embeddings ha perso su entrambi i fronti — il
@@ -186,23 +188,40 @@ qualcosa che il vecchio livello di riferimento TF-IDF, basato sulla
 sovrapposizione letterale di termini, non poteva fare per costruzione.
 `src/rag.py` ora calcola una volta sola gli embeddings dei ~68k snippet del
 corpus di riferimento (`REF_EMBEDDINGS_FILE`, committato, ~46 MB) e
-confronta le query per similarità coseno. Questo unico cambio ha portato il
-benchmark adversarial dal 70% all'83,3%, eliminando ogni falso negativo. Anche
-i pesi del modello stesso (`models/embedding_model/`, ~88 MB) sono committati
-invece di essere scaricati da Hugging Face Hub a runtime — i container di
-Streamlit Cloud ripartono da un filesystem pulito a ogni redeploy, e questo
-livello gira su *ogni* previsione, non solo sul retrieval live, quindi un
-download da Hub all'avvio a freddo era un rischio concreto: se la rete ha un
-intoppo, l'app semplicemente non parte.
+confronta le query per similarità coseno. Anche i pesi del modello stesso
+(`models/embedding_model/`, ~88 MB) sono committati invece di essere scaricati
+da Hugging Face Hub a runtime — i container di Streamlit Cloud ripartono da un
+filesystem pulito a ogni redeploy, e questo livello gira su *ogni* previsione,
+non solo sul retrieval live, quindi un download da Hub all'avvio a freddo era
+un rischio concreto: se la rete ha un intoppo, l'app semplicemente non parte.
 
-Una lezione di calibrazione emersa dal cambio: la similarità di embeddings
-**non** separa "stesso claim, riformulato" da "stesso argomento, claim
-diverso" con la stessa nettezza dei match quasi letterali di TF-IDF. Sui 30
-scenari adversarial, 3 delle 4 chiamate sbagliate del solo layer di
-riferimento avevano punteggi 0,69–0,82 — ben sopra la soglia di override
-ereditata dalla versione TF-IDF (0,65). `REF_OVERRIDE_THRESHOLD` è ora 0,90:
-solo ripetizioni quasi letterali di uno snippet noto scavalcano del tutto
-l'ensemble, tutto il resto sposta solo il punteggio (`REF_BOOST`).
+**Il segnale di retrieval è volutamente asimmetrico — e l'asimmetria conta
+più del numero in cima.** Una versione iniziale lasciava che *qualsiasi*
+corrispondenza, vera o falsa, influenzasse il verdetto. Otteneva un 83,3%
+adversarial più alto — ma in parte fabbricando verità: un'affermazione falsa
+condivide di continuo il proprio argomento con notizie reali ("il vaccino
+altera il tuo DNA" sta proprio accanto ad articoli veri sulla genetica del
+COVID), quindi la demo mostrava un pannello verde "REAL / SUPPORTED"
+*direttamente sotto un verdetto FAKE rosso*, arrivando a dare il via libera a
+una teoria complottista sul vaccino. È esattamente il segnale sbagliato per
+uno strumento anti-disinformazione. Perciò il layer di riferimento ora è
+asimmetrico:
+
+- Corrispondere a un claim **falso** noto è vera evidenza di falsità — alza il
+  punteggio già da una similarità modesta, e un match quasi letterale può
+  scavalcare l'ensemble.
+- Corrispondere a un articolo **vero** noto afferma REAL solo se è *quasi
+  letterale* (`REF_OVERRIDE_THRESHOLD = 0,90`); la semplice vicinanza tematica
+  è mostrata come evidenza neutra ("lo snippet noto più vicino è reale al
+  69%"), mai come un verdetto.
+
+Questo costa circa tre punti di accuratezza adversarial (83,3% → 80,0%,
+un'affermazione COVID vera non più "salvata" da un articolo reale sullo stesso
+tema) — un costo che vale la pena pagare: i pannelli non possono più
+contraddire il verdetto, e la demo non presenta mai un'affermazione falsa come
+supportata. La similarità di embeddings semplicemente non separa "stesso claim,
+riformulato" da "stesso argomento, claim diverso" con abbastanza nettezza da
+essere trattata come segnale di verità, ma solo come evidenza recuperata.
 
 **Perché entrambi sono diventati sostenibili insieme:** le RNN ora girano
 come modelli TFLite tramite l'interprete `ai-edge-litert` (~10 MB) invece
@@ -351,6 +370,6 @@ Fact Check viene saltato e GDELT resta il fallback.
   (`REF_OVERRIDE_THRESHOLD = 0,90`).
 - Le RNN sono addestrate su un sottocampione di 5.000 articoli (budget CPU);
   la SVM vede l'intero training set.
-- L'accuratezza fuori dominio (83,3%) è il numero che conta per un uso
+- L'accuratezza fuori dominio (80,0%) è il numero che conta per un uso
   reale, ed è il motivo per cui qualunque deploy di un sistema come questo
   richiede un essere umano nel ciclo.

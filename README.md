@@ -11,11 +11,12 @@ clean, reproducible pipeline: **dataset analysis → models → Streamlit demo**
 Live demo: https://fake-news-screening.streamlit.app/
 
 > **The honest headline:** the ensemble scores **94.6%** on a leakage-free
-> in-domain test set and **83.3%** on 30 out-of-domain adversarial scenarios.
-> That gap narrowed a lot (it was 23.6 points, now 11.3) once retrieval
-> switched from literal word overlap to real sentence embeddings — see
-> *"Two very different uses of embeddings"* below for why that upgrade
-> helped retrieval but would have hurt classification.
+> in-domain test set and **80.0%** on 30 out-of-domain adversarial scenarios,
+> with **zero false negatives** — it never waves a hoax through; every error
+> is an over-cautious false positive on a true statement. The retrieval layer
+> is used to *find* the closest known real/fake claims, not to assert truth
+> from topical similarity — see *"Two very different uses of embeddings"* below
+> for why that distinction matters and what it costs.
 
 ## The problem with "99% accuracy"
 
@@ -56,8 +57,9 @@ documents why those numbers are a red flag rather than a result:
    the system has already seen*, *not* fact-checking, and the demo shows the
    retrieved evidence explicitly.
 5. **Claim-level retrieval** — the input is split into claim-like sentences
-   and each claim is retrieved independently, so the UI can show supported,
-   refuted, or unsupported statements.
+   and each claim is retrieved independently, so the UI can show, per claim,
+   whether it matches a known false claim, matches known reporting, or has no
+   close match — evidence labels, not truth judgements.
 6. **Live retrieval fallback** — the first few claims are also checked against
     free live sources (Google Fact Check when an API key is configured, GDELT
     otherwise, rate-limited). A live fact-check verdict takes precedence for
@@ -110,19 +112,19 @@ truths), `python -m src.evaluate --adversarial` →
 | Domain | Accuracy | False positives | False negatives | Flagged for review |
 |---|---|---|---|---|
 | Politics | 70% | 3 | 0 | 2 |
-| COVID | 100% | 0 | 0 | 3 |
+| COVID | 90% | 1 | 0 | 3 |
 | Mixed | 80% | 2 | 0 | 3 |
-| **Overall** | **83.3%** | 5 | 0 | 8 |
+| **Overall** | **80.0%** | 6 | 0 | 8 |
 
-Switching the reference layer from TF-IDF to semantic embeddings (see below)
-took this from 70% to 83.3% and eliminated every false negative — the
-remaining errors are **false positives on true political statements**
-("Obama served two terms…" → FAKE): the 2015–2017 training window taught the
-classifiers that short factual claims about US politics *look like*
-fake-news bait, and none of the retrieval layers have seen that specific
-true sentence before. This is the temporal/stylistic bias surviving every
-mitigation — and the reason the demo presents itself as a screening aid, not
-a truth oracle.
+Every error is a **false positive on a true statement** ("Donald Trump won the
+2016 election…" → FAKE): the 2015–2017 training window taught the classifiers
+that short factual claims about US politics *look like* fake-news bait, and the
+retrieval layer deliberately no longer "rescues" them by treating a
+same-topic real article as proof (see the next section). This is the
+temporal/stylistic bias surviving every mitigation — the reason the demo
+presents itself as a screening aid, not a truth oracle. What matters for a
+disinformation tool is the other column: **zero false negatives**, no hoax
+waved through.
 
 ## Reporting Takeaways
 
@@ -153,7 +155,7 @@ same* fused dataset and split as `src.train`
 
 | | In-domain | Out-of-domain (30 scenarios) |
 |---|---|---|
-| Current ensemble (TF-IDF + SVM/GRU/LSTM) | 94.6% | 83.3% |
+| Current ensemble (TF-IDF + SVM/GRU/LSTM) | 94.6% | 80.0% |
 | MiniLM embeddings + linear classifier | 88.5% | 60% |
 
 The embeddings-based classifier lost on both axes — sharpest on WELFake
@@ -174,22 +176,35 @@ almost no shared vocabulary — something the old TF-IDF reference layer,
 built on literal term overlap, structurally could not do. `src/rag.py` now
 embeds the ~68k-snippet reference corpus once (`REF_EMBEDDINGS_FILE`,
 committed, ~46 MB) and compares queries against it by cosine similarity.
-Swapping this one layer took the adversarial benchmark from 70% to 83.3%
-and eliminated every false negative. The model weights themselves
-(`models/embedding_model/`, ~88 MB) are also committed rather than pulled
-from the Hugging Face Hub at runtime — Streamlit Cloud containers restart
-from a clean filesystem on every redeploy, and this layer runs on *every*
-prediction, not just live retrieval, so a Hub download on cold start was a
-real "the app won't boot if the network hiccups" risk.
+The model weights themselves (`models/embedding_model/`, ~88 MB) are also
+committed rather than pulled from the Hugging Face Hub at runtime — Streamlit
+Cloud containers restart from a clean filesystem on every redeploy, and this
+layer runs on *every* prediction, not just live retrieval, so a Hub download
+on cold start was a real "the app won't boot if the network hiccups" risk.
 
-One calibration lesson from making the switch: embedding similarity does
-**not** separate "same claim, reworded" from "same topic, different claim"
-as cleanly as TF-IDF's near-literal matches did. On the 30 adversarial
-scenarios, 3 of 4 wrong reference-only calls scored 0.69–0.82 — well above
-the override threshold carried over from the TF-IDF version (0.65).
-`REF_OVERRIDE_THRESHOLD` is now 0.90: only near-verbatim repeats of a known
-snippet override the ensemble outright, everything else only nudges the
-score (`REF_BOOST`).
+**The retrieval signal is deliberately asymmetric — and that asymmetry
+matters more than the headline number.** An early version let *any* close
+match, real or fake, sway the verdict. It scored a higher 83.3% adversarial
+— but it did so partly by fabricating truth: a false claim shares its topic
+with genuine reporting constantly ("the vaccine alters your DNA" sits right
+next to real articles on COVID genetics), so the demo would show a green
+"known REAL / SUPPORTED" panel *directly under a red FAKE headline*, and even
+green-light a vaccine conspiracy. That is exactly the wrong signal for a
+disinformation tool. So the reference layer is now asymmetric:
+
+- Matching a known **fake** claim is genuine evidence of fakeness — it boosts
+  the score from a modest similarity, and a near-verbatim match can override.
+- Matching a known **real** article only asserts REAL when it is
+  *near-verbatim* (`REF_OVERRIDE_THRESHOLD = 0.90`); mere topical proximity is
+  surfaced as neutral evidence ("closest known snippet is real at 69%"), never
+  as a verdict.
+
+This costs about three points of adversarial accuracy (83.3% → 80.0%, one
+true COVID statement no longer "rescued" by a same-topic real article) — a
+cost worth paying: the panels can no longer contradict the headline, and the
+demo never presents a false claim as supported. Embedding similarity simply
+does not separate "same claim, reworded" from "same topic, different claim"
+cleanly enough to be trusted as a truth signal, only as retrieved evidence.
 
 **Why both were affordable at once:** the RNNs now run as TFLite models via
 the ~10 MB `ai-edge-litert` interpreter instead of the full TensorFlow
@@ -331,6 +346,6 @@ Fact Check is skipped and GDELT is the fallback.
   reserved for near-verbatim matches (`REF_OVERRIDE_THRESHOLD = 0.90`).
 - The RNNs are trained on a 5,000-article subsample (CPU budget); the SVM sees
   the full training set.
-- Out-of-domain accuracy (83.3%) is the number that matters for real-world
+- Out-of-domain accuracy (80.0%) is the number that matters for real-world
   use, and it is why any deployment of a system like this needs a human in
   the loop.
