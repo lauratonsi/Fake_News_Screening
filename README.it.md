@@ -68,11 +68,13 @@ documenta perché quei numeri sono un campanello d'allarme, non un risultato:
    indipendente, così l'interfaccia può mostrare, per ciascun claim, se
    corrisponde a un'affermazione falsa nota, a un articolo reale noto, o se
    non ha corrispondenze — etichette di *evidenza*, non giudizi di verità.
-6. **Fallback di retrieval live** — i primi claim vengono controllati anche
-   su fonti live gratuite (Google Fact Check quando è configurata una chiave
-   API, altrimenti GDELT, con rate limiting). Un verdetto di fact-checking
-   live ha la precedenza per quel claim; altrimenti decide il corpus
-   committato, così il sistema funziona anche completamente offline.
+6. **Retrieval live** — i primi claim vengono controllati anche su fonti live
+   gratuite, in ordine di precedenza: Google Fact Check Tools (un vero
+   *verdetto* di fact-checking, quando è configurata una chiave API), poi
+   Wikipedia (contesto affidabile e senza chiave), con GDELT come ricerca
+   notizie di ultima istanza. Un verdetto di fact-checking live ha la
+   precedenza per quel claim; altrimenti decide il corpus committato, così il
+   sistema funziona anche completamente offline.
 7. **Flag di revisione umana** — quando i tre modelli sono in forte
    disaccordo (scarto > 0,40), il verdetto viene segnalato come a bassa
    affidabilità invece di essere presentato come certo.
@@ -264,7 +266,7 @@ uno stress test permanente e ripetibile, non un esperimento occasionale.
 │   ├── evaluate.py         report in-domain e benchmark adversarial
 │   ├── rag.py              retrieval sul corpus di riferimento (embeddings semantici)
 │   ├── claim_rag.py        analisi di retrieval per singolo claim
-│   ├── external_retrieval.py  evidenza live (Google Fact Check / GDELT)
+│   ├── external_retrieval.py  evidenza live (Google Fact Check / Wikipedia / GDELT)
 │   └── tokenizer.py        tokenizer indipendente dal framework (niente TF in produzione)
 ├── tests/                  suite pytest: protocollo di split, logica ensemble, retrieval
 ├── models/                 artefatti addestrati incl. RNN TFLite (~8 MB) e il
@@ -322,25 +324,27 @@ sostenibili insieme"* sopra per il conto della memoria dietro questa scelta.
 
 ## Retrieval live: configurazione e aspettative oneste
 
-Il livello live (`src/external_retrieval.py`) interroga due fonti gratuite
-per ogni claim, in ordine:
+Il livello live (`src/external_retrieval.py`) interroga fonti gratuite per
+ogni claim, in ordine di precedenza:
 
 1. **Google Fact Check Tools** — solo se è impostata
-   `GOOGLE_FACTCHECK_API_KEY`; un verdetto da qui ha precedenza su tutto
-   il resto.
-2. **GDELT** (nessuna chiave richiesta) — un motore di ricerca di notizie
-   *live*, non un archivio di fact-checking.
+   `GOOGLE_FACTCHECK_API_KEY`. L'unica fonte che restituisce un vero
+   *verdetto* di fact-checking, quindi vince.
+2. **Wikipedia** (API di ricerca MediaWiki, senza chiave) — *contesto*
+   tematico affidabile e veloce. È il default su cui si può contare, quello che
+   fa sì che il pannello "Retrieval live" mostri davvero evidenza concreta. È
+   contesto, mai un verdetto.
+3. **GDELT** (senza chiave) — una ricerca notizie *live* di ultima istanza. Il
+   suo endpoint gratuito condiviso è pesantemente rate-limited (HTTP 429) e
+   inaffidabile, quindi entra in gioco solo quando le due sopra non
+   restituiscono nulla; è tenuto per completezza, non è una fonte su cui contare.
 
-GDELT funziona meglio per argomenti genuinamente attuali e in corso (tassi
-d'interesse, un'elezione in corso, una pandemia in svolgimento). Diversi
-esempi della demo e scenari adversarial testano intenzionalmente claim
-*storici* (l'elezione del 2016, un licenziamento del 2017, claim COVID del
-2020-21) — l'indice degli articoli di GDELT parte da circa febbraio 2017,
-quindi un claim emerge solo se un articolo successivo lo menziona
-retrospettivamente, con una formulazione più o meno simile. Vedere "nessuna
-evidenza live trovata" su un esempio storico è un comportamento atteso, non
-una funzionalità rotta; lo stesso codice restituisce affidabilmente articoli
-reali per un claim su qualcosa che accade quest'anno.
+Wikipedia restituisce qualcosa in tema praticamente per ogni claim, attuale o
+storico — è il motivo per cui ha sostituito GDELT come default: un claim sulla
+Federal Reserve restituisce l'articolo *Federal Reserve*, un claim sull'elezione
+del 2016 restituisce *Donald Trump* / *Hillary Clinton 2016 presidential
+campaign*. È contesto da leggere, non un verdetto di verità — solo il percorso
+Google Fact Check ne afferma uno.
 
 **Per attivare il percorso di qualità superiore di Google Fact Check:**
 1. Nella Google Cloud Console, abilita la "Fact Check Tools API" e crea una
@@ -356,7 +360,7 @@ reali per un claim su qualcosa che accade quest'anno.
    non serve alcuna modifica al codice.
 
 Senza chiave, l'app funziona esattamente come documentato sopra — Google
-Fact Check viene saltato e GDELT resta il fallback.
+Fact Check viene saltato e Wikipedia è la fonte live di default.
 
 ## Limitazioni oneste
 

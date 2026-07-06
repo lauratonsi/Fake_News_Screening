@@ -60,11 +60,12 @@ documents why those numbers are a red flag rather than a result:
    and each claim is retrieved independently, so the UI can show, per claim,
    whether it matches a known false claim, matches known reporting, or has no
    close match — evidence labels, not truth judgements.
-6. **Live retrieval fallback** — the first few claims are also checked against
-    free live sources (Google Fact Check when an API key is configured, GDELT
-    otherwise, rate-limited). A live fact-check verdict takes precedence for
-    that claim; otherwise the committed corpus decides, so the system works
-    fully offline too.
+6. **Live retrieval** — the first few claims are also checked against free
+    live sources, in order: Google Fact Check Tools (a real fact-check
+    *verdict*, when an API key is configured), then Wikipedia (reliable,
+    key-free topic *context*), with GDELT as a last-resort news search. A live
+    fact-check verdict takes precedence for that claim; otherwise the committed
+    corpus decides, so the system works fully offline too.
 7. **Human-review flag** — when the three models disagree strongly
    (spread > 0.40), the verdict is marked low-confidence instead of being
    reported as certain.
@@ -245,7 +246,7 @@ stress test rather than a one-off experiment.
 │   ├── evaluate.py         in-domain report & adversarial benchmark
 │   ├── rag.py              reference-corpus retrieval (semantic embeddings)
 │   ├── claim_rag.py        per-claim retrieval analysis
-│   ├── external_retrieval.py  live evidence (Google Fact Check / GDELT)
+│   ├── external_retrieval.py  live evidence (Google Fact Check / Wikipedia / GDELT)
 │   └── tokenizer.py        framework-independent tokenizer (no TF at serving time)
 ├── tests/                  pytest suite: split protocol, ensemble logic, retrieval
 ├── models/                 trained artifacts incl. TFLite RNNs (~8 MB) and the
@@ -302,23 +303,24 @@ budget behind that.
 
 ## Live retrieval: setup and honest expectations
 
-The live layer (`src/external_retrieval.py`) queries two free sources per
-claim, in order:
+The live layer (`src/external_retrieval.py`) queries free sources per claim,
+in order of precedence:
 
-1. **Google Fact Check Tools** — only if `GOOGLE_FACTCHECK_API_KEY` is set; a
-   verdict from here takes precedence over everything else.
-2. **GDELT** (no key needed) — a live *news* search engine, not a
-   fact-checking archive.
+1. **Google Fact Check Tools** — only if `GOOGLE_FACTCHECK_API_KEY` is set. The
+   only source that returns an actual fact-check *verdict*, so it wins.
+2. **Wikipedia** (MediaWiki search API, no key) — reliable, fast topic
+   *context*. This is the dependable default that makes the "Live retrieval"
+   panel actually show concrete evidence. It is context, never a verdict.
+3. **GDELT** (no key) — a last-resort live *news* search. Its free shared
+   endpoint is heavily rate-limited (HTTP 429) and flaky, so it only runs when
+   the two above return nothing; it is kept for completeness, not relied upon.
 
-GDELT works best for genuinely current, ongoing topics (interest rates, an
-election in progress, an unfolding pandemic). Several of this project's demo
-examples and adversarial scenarios intentionally test *historical* claims
-(the 2016 election, a 2017 firing, 2020-21 COVID claims) — GDELT's article
-index starts around February 2017, so a claim only surfaces if some later
-article happens to mention it retrospectively, in roughly matching phrasing.
-Seeing "No live evidence found" on a historical example is expected
-behavior, not a broken feature; the same code reliably returns real articles
-for a claim about something happening this year.
+Wikipedia returns something on-topic for essentially any claim, current or
+historical, which is why it replaced GDELT as the default: a Federal Reserve
+claim returns the *Federal Reserve* article, a 2016-election claim returns
+*Donald Trump* / *Hillary Clinton 2016 presidential campaign*. This is
+context to read, not a truth verdict — only the Google Fact Check path
+asserts one.
 
 **To enable the higher-quality Google Fact Check path:**
 1. In Google Cloud Console, enable the "Fact Check Tools API" and create an
@@ -334,7 +336,7 @@ for a claim about something happening this year.
    code change is needed.
 
 Without a key, the app still works exactly as documented above — Google
-Fact Check is skipped and GDELT is the fallback.
+Fact Check is skipped and Wikipedia is the default live source.
 
 ## Honest limitations
 

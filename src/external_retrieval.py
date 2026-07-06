@@ -6,16 +6,26 @@ queries Google Fact Check Tools and uses it as the highest-signal source.
 """
 from __future__ import annotations
 
+import html
 import json
 import os
 import re
 import time
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.parse import quote, urlencode
+from urllib.request import Request, urlopen
 
 from . import config
+
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _strip_html(text: str) -> str:
+    """Wikipedia search snippets contain <span class="searchmatch"> tags and
+    HTML entities; reduce them to plain text for display."""
+    return html.unescape(_HTML_TAG_RE.sub("", text)).strip()
 
 
 @dataclass(frozen=True)
@@ -180,6 +190,65 @@ class ExternalEvidenceRetriever:
             "evidence": [hit.__dict__ for hit in evidence],
         }
 
+    def _query_wikipedia(self, text: str) -> dict:
+        """Reliable, key-free topic context from Wikipedia's search API.
+
+        Wikipedia ranks results by relevance rather than requiring every term
+        (unlike GDELT's strict AND), so it dependably returns *something*
+        on-topic. It is context, not fact-checking, so it never asserts a
+        verdict — the evidence is surfaced for the reader to judge.
+        """
+        query = _extract_keywords(text, max_terms=config.WIKIPEDIA_MAX_TERMS).replace('"', "")
+        params = urlencode(
+            {
+                "action": "query",
+                "list": "search",
+                "srsearch": query or text,
+                "srlimit": self.max_records,
+                "srprop": "snippet",
+                "format": "json",
+            }
+        )
+        url = f"https://en.wikipedia.org/w/api.php?{params}"
+        request = Request(url, headers={"User-Agent": config.LIVE_USER_AGENT})
+
+        try:
+            with urlopen(request, timeout=self.timeout_seconds) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except Exception as exc:
+            return {
+                "source": "wikipedia",
+                "verdict": None,
+                "score": 0.0,
+                "message": f"Wikipedia unavailable: {exc}",
+                "evidence": [],
+            }
+
+        results = ((payload.get("query") or {}).get("search")) or []
+        evidence = []
+        for item in results[: self.max_records]:
+            title = item.get("title") or ""
+            snippet = _strip_html(item.get("snippet") or "")
+            page = "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_"))
+            evidence.append(
+                ExternalHit(
+                    source="wikipedia",
+                    title=f"{title} — {snippet[:140]}" if snippet else title,
+                    url=page,
+                    score=1.0,
+                    label=None,
+                    publisher="Wikipedia",
+                ).__dict__
+            )
+
+        return {
+            "source": "wikipedia",
+            "verdict": None,  # context, never a verdict
+            "score": 0.0,
+            "message": "Wikipedia context found" if evidence else "No Wikipedia matches",
+            "evidence": evidence,
+        }
+
     def _query_gdelt(self, text: str) -> dict:
         now = time.monotonic()
         if now - ExternalEvidenceRetriever._last_gdelt_call < config.GDELT_MIN_INTERVAL:
@@ -276,14 +345,20 @@ class ExternalEvidenceRetriever:
         }
 
     def query(self, text: str) -> dict:
+        # 1. Google Fact Check: the only real verdict source — takes precedence.
         google = self._query_google_factcheck(text)
         if google["evidence"]:
             return google
 
+        # 2. Wikipedia: reliable, key-free context. The dependable default.
+        wiki = self._query_wikipedia(text)
+        if wiki["evidence"]:
+            return wiki
+
+        # 3. GDELT: last-resort news search (heavily rate-limited). Return it
+        # when it has evidence OR a meaningful status (rate-limited/unavailable)
+        # worth showing instead of a misleading generic fallback.
         gdelt = self._query_gdelt(text)
-        # Return GDELT's own result when it has evidence OR when it has a
-        # meaningful non-"no matches" message (rate-limited / unavailable), so
-        # that state reaches the UI instead of a misleading generic fallback.
         if gdelt["evidence"] or any(
             token in gdelt["message"].lower()
             for token in ("rate-limited", "unavailable", "unexpected")
@@ -294,6 +369,6 @@ class ExternalEvidenceRetriever:
             "source": "live",
             "verdict": None,
             "score": 0.0,
-            "message": "No live evidence found in Google Fact Check or GDELT",
+            "message": "No live evidence found in Google Fact Check, Wikipedia, or GDELT",
             "evidence": [],
         }

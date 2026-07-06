@@ -71,13 +71,23 @@ REF_OVERRIDE_THRESHOLD = 0.90  # above this the match overrides the ensemble
 REF_BOOST = 0.25             # otherwise it only shifts the ensemble score
 
 # --- Live retrieval -------------------------------------------------------------
-# Free external evidence: Google Fact Check when an API key is configured,
-# GDELT otherwise. GDELT allows roughly one request every 5 seconds, so live
-# lookups are capped per input and rate-limited; the committed reference
-# corpus is always available as the offline fallback.
+# Free external evidence, queried per claim in this order of precedence:
+#   1. Google Fact Check Tools — only when GOOGLE_FACTCHECK_API_KEY is set;
+#      the only source that returns an actual fact-check *verdict*, so it wins.
+#   2. Wikipedia (MediaWiki search API) — no key, fast and reliable; returns
+#      topic *context*, not a verdict. This is the dependable default so the
+#      demo actually shows concrete live evidence.
+#   3. GDELT — last-resort news search. Its free shared endpoint is heavily
+#      rate-limited (HTTP 429) and flaky, so it only runs when the two above
+#      return nothing. Kept for completeness, not relied upon.
+# The committed reference corpus is always available as the offline fallback.
 LIVE_MAX_CLAIMS = 3          # query live sources for at most this many claims
 LIVE_TIMEOUT_SECONDS = 6
 GDELT_MIN_INTERVAL = 5.0     # seconds between GDELT requests (API rate limit)
+# Wikipedia's API asks clients to send a descriptive User-Agent; a generic
+# urllib default can get throttled or blocked.
+LIVE_USER_AGENT = "FakeNewsScreening/1.0 (https://github.com/lauratonsi/Fake_News_Screening)"
+WIKIPEDIA_MAX_TERMS = 6      # Wikipedia search ranks by relevance (not strict AND)
 
 # A full, grammatical sentence almost never appears verbatim in a news
 # article or a fact-check, so sending the raw claim as the query starves

@@ -51,9 +51,13 @@ flowchart LR
      matches known reporting, or no close match — not by an asserted truth
      verdict.
 
-6. **Live retrieval fallback**
-   - Query a free external source (Google Fact Check API when a key is available, otherwise GDELT).
-   - Live lookups are capped to the first few claims and rate-limited (GDELT allows ~1 request / 5 s).
+6. **Live retrieval**
+   - Query free external sources per claim, in order: Google Fact Check Tools
+     (a real verdict, when a key is set), then Wikipedia (reliable, key-free
+     topic context), then GDELT as a last-resort news search.
+   - Wikipedia is the dependable default — GDELT's free endpoint is heavily
+     rate-limited (HTTP 429), so it only runs when the others return nothing.
+   - Live lookups are capped to the first few claims.
    - A live fact-check verdict takes precedence for a claim; the committed corpus decides otherwise.
    - The adversarial benchmark runs with live retrieval disabled so its numbers stay reproducible offline.
 

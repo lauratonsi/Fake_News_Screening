@@ -164,8 +164,13 @@ if st.button("Analyze", type="primary") and text.strip():
                     st.markdown(f"- **{hit['label']}** ({hit['score']:.1%}): {hit['text']}")
                 st.divider()
 
-        st.subheader("Live retrieval (free API / fallback)")
-        st.caption(f"Source: {claim_analysis.get('source') or 'local-only'}")
+        st.subheader("Live retrieval")
+        st.caption(
+            f"Source: {claim_analysis.get('source') or 'local-only'} — "
+            "Google Fact Check (verdict, if a key is set), else Wikipedia "
+            "(context, no key). A live fact-check verdict takes precedence; "
+            "Wikipedia is context, not verification."
+        )
         with st.expander("Live evidence by claim", expanded=False):
             for item in claims:
                 live = item.get("live") or {}
