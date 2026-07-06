@@ -38,6 +38,9 @@ flowchart LR
    - Semantic similarity (sentence embeddings, `all-MiniLM-L6-v2`) against
      snippets already known to be real or fake — matches reworded claims,
      not just literal ones.
+   - The model weights are committed under `models/embedding_model/` (not
+     downloaded from the Hugging Face Hub at runtime), so this layer never
+     depends on network access at cold start.
    - Treated as a support signal, not as fact-checking.
    - The demo surfaces the retrieved evidence directly.
 

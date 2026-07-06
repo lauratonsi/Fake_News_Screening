@@ -51,6 +51,14 @@ RNN_BATCH_SIZE = 16
 # experiments/calibrate_rag_thresholds.py; re-run it if the model changes.
 REF_SNIPPET_CHARS = 300
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+# Loaded from this committed local copy (~88 MB), NOT downloaded from the
+# Hugging Face Hub at runtime: Streamlit Cloud containers restart from a
+# clean filesystem on every redeploy, so a Hub download at cold start is a
+# real availability risk (network hiccup or Hub rate limit = app won't boot)
+# for a component that runs on every single prediction, not just live
+# retrieval. Falls back to the Hub name if the local copy is ever missing
+# (e.g. a fresh clone before running src.train, which regenerates it).
+EMBEDDING_MODEL_PATH = MODELS_DIR / "embedding_model"
 REF_MATCH_THRESHOLD = 0.45   # minimum cosine similarity to count as a match
 REF_MARGIN = 0.05            # required gap between the two corpora
 # Empirically, semantic similarity does not separate "same claim, reworded"

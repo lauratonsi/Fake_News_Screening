@@ -35,6 +35,16 @@ def _normalize(matrix: np.ndarray) -> np.ndarray:
     return matrix / np.clip(norms, 1e-9, None)
 
 
+def _embedding_model_source() -> str:
+    """Prefer the committed local copy; fall back to the Hub name so a
+    fresh clone (before models/embedding_model exists) can still run
+    src.train to regenerate everything."""
+    local = config.EMBEDDING_MODEL_PATH
+    if local.exists() and (local / "config.json").exists():
+        return str(local)
+    return config.EMBEDDING_MODEL_NAME
+
+
 def build_and_save_embeddings(
     real_file: Path | None = None,
     fake_file: Path | None = None,
@@ -56,7 +66,7 @@ def build_and_save_embeddings(
     real = pd.read_csv(real_file)["text"].fillna("").tolist()
     fake = pd.read_csv(fake_file)["text"].fillna("").tolist()
 
-    model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
+    model = SentenceTransformer(_embedding_model_source())
     print(f">>> Encoding reference corpus ({len(real)} real + {len(fake)} fake snippets)...")
     real_emb = model.encode(real, batch_size=64, show_progress_bar=True).astype(np.float16)
     fake_emb = model.encode(fake, batch_size=64, show_progress_bar=True).astype(np.float16)
@@ -99,7 +109,7 @@ class ReferenceRAG:
 
         from sentence_transformers import SentenceTransformer
 
-        self.model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
+        self.model = SentenceTransformer(_embedding_model_source())
 
     def _top_hits(self, label: str, scores: np.ndarray, texts: list[str], top_k: int) -> list[RetrievalHit]:
         if len(scores) == 0:

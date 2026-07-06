@@ -175,7 +175,12 @@ built on literal term overlap, structurally could not do. `src/rag.py` now
 embeds the ~68k-snippet reference corpus once (`REF_EMBEDDINGS_FILE`,
 committed, ~46 MB) and compares queries against it by cosine similarity.
 Swapping this one layer took the adversarial benchmark from 70% to 83.3%
-and eliminated every false negative.
+and eliminated every false negative. The model weights themselves
+(`models/embedding_model/`, ~88 MB) are also committed rather than pulled
+from the Hugging Face Hub at runtime — Streamlit Cloud containers restart
+from a clean filesystem on every redeploy, and this layer runs on *every*
+prediction, not just live retrieval, so a Hub download on cold start was a
+real "the app won't boot if the network hiccups" risk.
 
 One calibration lesson from making the switch: embedding similarity does
 **not** separate "same claim, reworded" from "same topic, different claim"
@@ -228,7 +233,8 @@ stress test rather than a one-off experiment.
 │   ├── external_retrieval.py  live evidence (Google Fact Check / GDELT)
 │   └── tokenizer.py        framework-independent tokenizer (no TF at serving time)
 ├── tests/                  pytest suite: split protocol, ensemble logic, retrieval
-├── models/                 trained artifacts incl. TFLite RNNs (~8 MB, committed)
+├── models/                 trained artifacts incl. TFLite RNNs (~8 MB) and the
+│                           bundled embedding model (~88 MB, committed)
 ├── reference_corpus/       known real/fake snippets + embeddings (~55 MB)
 ├── benchmarks/             versioned scenarios + measured results
 ├── experiments/            tested-and-rejected alternatives (see below)

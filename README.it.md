@@ -187,7 +187,13 @@ sovrapposizione letterale di termini, non poteva fare per costruzione.
 `src/rag.py` ora calcola una volta sola gli embeddings dei ~68k snippet del
 corpus di riferimento (`REF_EMBEDDINGS_FILE`, committato, ~46 MB) e
 confronta le query per similarità coseno. Questo unico cambio ha portato il
-benchmark adversarial dal 70% all'83,3%, eliminando ogni falso negativo.
+benchmark adversarial dal 70% all'83,3%, eliminando ogni falso negativo. Anche
+i pesi del modello stesso (`models/embedding_model/`, ~88 MB) sono committati
+invece di essere scaricati da Hugging Face Hub a runtime — i container di
+Streamlit Cloud ripartono da un filesystem pulito a ogni redeploy, e questo
+livello gira su *ogni* previsione, non solo sul retrieval live, quindi un
+download da Hub all'avvio a freddo era un rischio concreto: se la rete ha un
+intoppo, l'app semplicemente non parte.
 
 Una lezione di calibrazione emersa dal cambio: la similarità di embeddings
 **non** separa "stesso claim, riformulato" da "stesso argomento, claim
@@ -242,7 +248,8 @@ uno stress test permanente e ripetibile, non un esperimento occasionale.
 │   ├── external_retrieval.py  evidenza live (Google Fact Check / GDELT)
 │   └── tokenizer.py        tokenizer indipendente dal framework (niente TF in produzione)
 ├── tests/                  suite pytest: protocollo di split, logica ensemble, retrieval
-├── models/                 artefatti addestrati incl. RNN TFLite (~8 MB, committati)
+├── models/                 artefatti addestrati incl. RNN TFLite (~8 MB) e il
+│                           modello di embedding committato (~88 MB)
 ├── reference_corpus/       snippet noti veri/falsi + embeddings (~55 MB)
 ├── benchmarks/             scenari versionati + risultati misurati
 ├── experiments/            alternative testate e scartate (vedi sopra)
