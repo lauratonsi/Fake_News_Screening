@@ -138,9 +138,12 @@ class ExternalEvidenceRetriever:
                 "evidence": [],
             }
 
+        # The Fact Check API ranks claims by relevance (not a strict AND like
+        # GDELT), so give it a few more terms and drop the phrase quotes.
+        query = _extract_keywords(text, max_terms=config.WIKIPEDIA_MAX_TERMS).replace('"', "")
         params = urlencode(
             {
-                "query": _extract_keywords(text),
+                "query": query,
                 "languageCode": config.GOOGLE_FACTCHECK_LANGUAGE,
                 "pageSize": self.max_records,
                 "key": self.factcheck_api_key,

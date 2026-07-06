@@ -5,13 +5,34 @@ Run locally:
 
 The heavy lifting lives in ``src/predict.py`` — this file is UI only.
 """
+import os
+
 import streamlit as st
 
 st.set_page_config(page_title="Fake News Screening", page_icon="🛡️", layout="wide")
 
 
+def _bridge_secrets_to_env():
+    """Make ``st.secrets`` values visible to ``os.getenv``.
+
+    Streamlit Community Cloud already exposes root-level secrets as environment
+    variables, but a local ``.streamlit/secrets.toml`` only populates
+    ``st.secrets``. The retrieval code reads ``os.getenv(...)``, so mirror the
+    keys we use into the environment to behave identically in both places.
+    """
+    for key in ("GOOGLE_FACTCHECK_API_KEY",):
+        if os.getenv(key):
+            continue
+        try:
+            if key in st.secrets:
+                os.environ[key] = str(st.secrets[key])
+        except Exception:
+            pass  # no secrets file locally is fine
+
+
 @st.cache_resource
 def load_system():
+    _bridge_secrets_to_env()
     from src.predict import ScreeningSystem
 
     return ScreeningSystem()

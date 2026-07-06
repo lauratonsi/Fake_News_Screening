@@ -6,3 +6,8 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .DS_Store
+
+# Secrets — never commit API keys (Google Fact Check, etc.)
+.streamlit/secrets.toml
+.env
+*.env
