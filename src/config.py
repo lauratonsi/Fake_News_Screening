@@ -159,28 +159,36 @@ ADVERSARIAL_RESULTS_FILE = BENCHMARKS_DIR / "adversarial_results.json"
 # user submissions are never committed. See src/feedback.py.
 FEEDBACK_LOG = DATA_DIR / "feedback.jsonl"
 
-# Minimum overall accuracy the 64-scenario adversarial benchmark must hold
-# (measured 78.1%; floor set with a margin below that). The hard invariant is
+# Minimum overall accuracy the 76-scenario adversarial benchmark must hold
+# (measured 73.7%; floor set with a margin below that). The hard invariant is
 # zero false negatives on classic ("human_typical") disinformation, not overall
 # accuracy — this floor only guards against a silent further drop. See
 # tests/test_benchmark_invariants.py.
-ADVERSARIAL_ACCURACY_FLOOR = 0.70
+ADVERSARIAL_ACCURACY_FLOOR = 0.65
 
 # Minimum recall (catch rate) on "ai_fluent"-style FAKE scenarios: fluent,
 # source-attributed prose with none of the classic disinformation tropes (see
 # README "AI-generated disinformation is harder to detect"). Split by
 # provenance because that split is what makes the finding citable rather than
 # circular:
-#   - `external_dataset` (6 scenarios): ChatGPT-3.5 paraphrases of real
-#     human-written misinformation from Chen & Shu's LLMFake dataset (ICLR
-#     2024) — nobody on this project wrote them, so this is the trustworthy,
-#     non-circular number. Measured recall: 83.3%, vs. 100% on human_typical
-#     hoaxes in the same domains — a real but modest gap.
+#   - `external_dataset` (18 scenarios): ChatGPT-3.5 paraphrases/rewrites of
+#     real human-written misinformation from Chen & Shu's LLMFake dataset
+#     (ICLR 2024) — nobody on this project wrote them, so this is the
+#     trustworthy, non-circular number. Measured recall: 61.1%, vs. 100% on
+#     human_typical hoaxes in the same domains — a real, more substantial gap
+#     than the first, smaller (n=6) sample suggested (83.3%). Growing the
+#     sample from 6 to 18 (adding topical diversity and a second generation
+#     method) made the measured gap *wider*, not narrower — the smaller
+#     sample was, in hindsight, not just circularity-free but also lucky.
+#     A further breakdown by generation method (see by_generation_method in
+#     the results file) found paraphrase-generated text far easier to catch
+#     (75.0%) than rewrite-generated text (33.3%) — a real difference in how
+#     the misinformation was produced, not just whether it was.
 #   - `hand_authored` (8 scenarios): written for this benchmark specifically
 #     to avoid overt tropes. Measured recall: 50.0% — markedly lower, but
 #     cannot rule out (consciously or not) being tuned against this system's
 #     own detection logic, so it is disclosed as exploratory, not headlined.
 # Both floors are DISCLOSED limitations, not targets: they only stop a future
 # change from making either number silently worse.
-AI_FLUENT_RECALL_FLOOR_EXTERNAL = 0.65
+AI_FLUENT_RECALL_FLOOR_EXTERNAL = 0.45
 AI_FLUENT_RECALL_FLOOR_HAND_AUTHORED = 0.30

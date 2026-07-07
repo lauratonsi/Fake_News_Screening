@@ -1,5 +1,5 @@
 {
-  "description": "64 out-of-domain scenarios written to expose weaknesses of the system: claims not present in the training corpora, uncomfortable truths, and plausible-sounding hoaxes. Labels: FAKE / REAL. Each scenario carries `length` (short: single claim sentence; long: ~120-260 word article-style paragraph) and, for FAKE items, `style`: `human_typical` (classic disinformation tropes - secret, leaked, whistleblower, anonymous source) or `ai_fluent` (fluent, source-attributed prose with none of those tropes). The 6 long `ai_fluent` scenarios are NOT hand-written: they are ChatGPT-3.5 paraphrases of real human-written misinformation, drawn unbiasedly (fixed random seed) from Chen & Shu's LLMFake dataset (ICLR 2024, github.com/llm-misinformation/llm-misinformation), PolitiFact/GossipCop subset only (the CoAID subset was excluded after a text-overlap check found it leaks into this project's own COVID training data). The 8 short `ai_fluent` scenarios remain hand-authored: no clean public short-claim LLM-paraphrase corpus was available (CoAID would have fit but is contaminated). REAL items are tagged `style: reporting`. See README 'AI-generated disinformation is harder to detect' for the measured comparison.",
+  "description": "76 out-of-domain scenarios written to expose weaknesses of the system: claims not present in the training corpora, uncomfortable truths, and plausible-sounding hoaxes. Labels: FAKE / REAL. Each scenario carries `length` (short: single claim sentence; long: ~100-260 word article-style paragraph) and, for FAKE items, `style`: `human_typical` (classic disinformation tropes - secret, leaked, whistleblower, anonymous source) or `ai_fluent` (fluent, source-attributed prose with none of those tropes). `ai_fluent` scenarios additionally carry `provenance`: `external_dataset` (18 scenarios) are ChatGPT-3.5 paraphrases/rewrites of real human-written misinformation, drawn unbiasedly (fixed random seed, stratified by domain and generation method, no cherry-picking) from Chen & Shu's LLMFake dataset (ICLR 2024, github.com/llm-misinformation/llm-misinformation), PolitiFact/GossipCop subset only (the CoAID subset was excluded after a text-overlap check found it leaks into this project's own COVID training data). `hand_authored` (8 scenarios, all short) remain hand-written: no clean public short-claim LLM-paraphrase corpus was available (CoAID would have fit but is contaminated). REAL items are tagged `style: reporting`. See README 'AI-generated disinformation is harder to detect' for the measured comparison.",
   "scenarios": [
     {
       "domain": "politics",
@@ -472,7 +472,8 @@
       "style": "ai_fluent",
       "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact14085",
       "text": "According to reports, Bill O'Reilly was approached by two women and three men at a bagel shop in New York City who expressed their disgust towards his alleged behavior towards women at Fox News. After being told to leave him alone, one of the men grabbed O'Reilly and he was then violently attacked by the other two men until he was rendered unconscious and bleeding. The attackers fled the scene and the police arrived within minutes, taking O'Reilly to St. Vincent's hospital where he is in critical condition with injuries that may be life-threatening. The family is asking for privacy and the police are seeking witnesses or evidence of the attack. Some liberals have praised the attack as deserved, which highlights the hypocrisy of their beliefs against cruel and unusual punishment.",
-      "provenance": "external_dataset"
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation"
     },
     {
       "domain": "politics",
@@ -481,7 +482,8 @@
       "style": "ai_fluent",
       "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact14699",
       "text": "Michigan DNR responded to an urgent call reporting a giant squid that had landed on Leland. Marine Biologist Dr. Debra Polowotski examined the specimen, which happened to be a freshwater species of the Architeuthis genus, confirming its rarity. The squid's presence in Lake Michigan came as a surprise as authorities were under the impression that the Cleveland Sea World complex contained all the squids. However, it was discovered that some had escaped and made their way to Lake Erie. The squids were contained in Lake Erie as they require vast spaces and are intimidated by closed-in areas. It was revealed that the discovered squid is a female and had laid eggs. Dr. Polowotski warns that exercise caution while swimming or boating as the walleye may not control the small population of these squids.",
-      "provenance": "external_dataset"
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation"
     },
     {
       "domain": "politics",
@@ -490,7 +492,8 @@
       "style": "ai_fluent",
       "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact13942",
       "text": "The government has put in place a new rule stating that all motorcycles must have a governor fitted by mid-January 2017 to prevent them from exceeding 75 miles per hour. This regulation aims to reduce motorcycle fatalities in the US, with many politicians having long pushed for stricter safety measures. Major motorcycle manufacturers were offered a large tax break by the government in 2014 to fit governors on all new motorcycles, but they declined. The US Department of Transportation played a key role in implementing the new regulation and has emphasized the need for it, saying that the majority of motorcycle fatalities are due to unsafe speeds. Exceptions have been made for states allowing higher speeds, and designated shops will offer subsidies for retrofitting motorcycles with the speed governor. Failure to comply with the new rule may result in fines for both riders and manufacturers.",
-      "provenance": "external_dataset"
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation"
     },
     {
       "domain": "mixed",
@@ -499,7 +502,8 @@
       "style": "ai_fluent",
       "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-3967904178",
       "text": "Tune in to Entertainment Tonight on Yahoo View. There have always been rumors and speculation surrounding the relationship of Gwen Stefani and Blake Shelton. This time, it is being reported by In Touch Weekly that Shelton ended things with Stefani in February before going on tour. However, recent photos posted by Stefani on Instagram show the two appearing quite affectionate on stage. These photos are not the first instances of Stefani sharing pictures since February. She also posted a jumbotron kiss and pictures of herself with other people backstage. She has also publicly supported Shelton through social media, even wishing him well when he was sick. According to an insider, the rumors of the breakup are false, but Stefani's social media behavior is seen as a desperate attempt to ignore the truth. It is speculated that Shelton ended things due to Stefani's neediness, drama, and jealousy. Reasons for this include her critical ex-husband and her discomfort with Shelton's relationship with other women, including voice champion Chloe Kohanski and his ex-wife Miranda Lambert. While Shelton does not reciprocate Stefani's social media gestures, he does have a picture of her as his profile photo. For more updates, visit Yahoo Entertainment.",
-      "provenance": "external_dataset"
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation"
     },
     {
       "domain": "mixed",
@@ -508,7 +512,8 @@
       "style": "ai_fluent",
       "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-1369753636",
       "text": "Megyn shouldn't be too concerned about the National Enquirer, as they have supported absurd claims in the past. Does anyone actually take this publication seriously? It's clear that Trump's allies at the National Enquirer are once again defending him. The New York Times and Washington Post are also guilty of biased reporting, but the National Enquirer at least knows that few people believe its stories. Other publications, on the other hand, pretend to be legitimate journalists. Chelsea Clinton is trying to bond with Megyn over this issue, but it's not appropriate. It's unlikely that they will become friends because of it. Some people are suggesting that the National Enquirer will create false reports about Megyn, including a scandalous lesbian affair. However, she is not a Clinton, so this is unlikely to happen. It's interesting to see how some of Chelsea's supporters are being mean to Megyn because of her past support for Trump. They seem to hold a grudge against her. Despite all of this, Megyn shouldn't feel sorry for herself. She has made controversial statements in the past and some people don't like her because of it. Chelsea may have hoped for a love fest in bonding over the National Enquirer, but her followers are being too mean to Megyn. Clearly, Chelsea didn't anticipate this response, but we did.",
-      "provenance": "external_dataset"
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation"
     },
     {
       "domain": "mixed",
@@ -517,7 +522,128 @@
       "style": "ai_fluent",
       "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-8511922365",
       "text": "According to a new report, Angelina Jolie might be getting married again. She has supposedly been dating a mysterious man for several months without telling her ex-husband Brad Pitt. Although she is still legally married to Brad, Angelina is allegedly planning her fourth wedding to a wealthy businessman in his forties. The couple began dating in early 2017 and have been keeping their relationship very secret. Angelina has chosen not to tell Brad about her new relationship and hopes to surprise him. She has also not shared the news with her children, fearing that they will inform their father. The wedding will reportedly take place in Cambodia, Angelina's second home, and will be a traditional Buddhist ceremony. The couple plans to wear traditional Cambodian attire and serve local dishes at the reception. Angelina's closest friends and family will be in attendance, and her children will have roles in the wedding. It is unclear how Brad will react when he learns about Angelina's plans.",
-      "provenance": "external_dataset"
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation"
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-3414394050",
+      "text": "Broadway star Jennifer Holliday has withdrawn from performing at the upcoming presidential inaugural due to backlash from her fans, particularly from the LGBTQ community. Holliday expressed regret for her earlier decision and apologized for causing any disappointment. This withdrawal follows the pattern of several other prominent entertainers who have declined to perform at the inauguration. Despite this, country star Toby Keith and actor Jon Voigt are still expected to participate in the concert. Holliday's decision was confirmed by her representative, who shared a letter she wrote to her fans in which she emphasized her support for the LGBTQ community. In a previous interview, Holliday defended her initial decision, explaining that she saw it as performing for the people in attendance rather than a political statement. However, the negative response she received, including death threats and calls for boycotts, deeply affected her. Holliday was scheduled to perform at the \"Make America Great Again! Welcome Celebration\" alongside Keith, Voigt, and President-elect Donald Trump. Compared to Barack Obama's inaugurations, Trump's event does not feature as many high-profile celebrities. Trump has stated that he prefers the focus to be on the people rather than the presence of A-list stars."
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-5543072612",
+      "text": "Drew Barrymore, who has expressed her unhappiness with her dating life, has found a pleasant distraction in Kristen Stewart, according to exclusive information obtained by RadarOnline.com. Both actresses, who have openly discussed their bisexuality, have developed a close bond. Stewart, who is currently in discussions for a reboot of Charlie's Angels, has sought guidance from Barrymore, who starred in and produced the 2000 film and its sequel. The insider reveals that there is noticeable chemistry between the two, with both actresses displaying flirtatious behavior. Barrymore has unofficially joined the project as a mentor and her lively personality is helping Stewart, who can be reserved, to come out of her shell. Interestingly, when Barrymore is present, Stewart never mentions her girlfriend Stella Maxwell, leaving room for speculation about what might happen during filming. If you have any interesting information, please contact RadarOnline.com at tips@radaronline.com or call 800-344-9598."
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-1289487505",
+      "text": "Following his rise to fame in Twilight, Robert Pattinson has become increasingly private due to the negative risk and reward balance that comes with opening up in interviews. The actor, who is currently dating singer F.K.A. Twigs, prefers to keep his personal life under wraps to avoid being labeled as dishonest or having his personality misconstrued. He has even gone to great lengths to maintain his privacy, including changing cars and outfits to confuse paparazzi and going as far as hiding in trunks to escape their attention. Pattinson admits that disappearing is not difficult, but it requires effort that most people are unwilling to put in."
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "rewrite_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 rewrite generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-4047356713",
+      "text": "The Duke and Duchess of Cambridge and Prince Harry recently participated in a London Marathon training day, showcasing their commitment to fitness. During the event, observers noticed a concerning change in Kate Middleton's appearance, as her once well-fitting leggings seemed loose on her shrinking frame. Reports have surfaced suggesting that the princess is battling an eating disorder, compulsively inducing vomiting after every meal. It appears that Kate's struggle to hide this shocking secret is becoming more difficult, evident in her frail physique. Photographs have emerged, revealing the telltale signs of her vomiting habits, such as Band-Aids wrapped around her fingers and thumbs, commonly associated with individuals suffering from bulimia. Concerns for Kate's well-being have heightened, with comparisons drawn to her late mother-in-law, Princess Diana, who also privately battled bulimia. Mental health experts have noted the significance of these signs on her hands and stress the detrimental effects of such weight-obsessed behaviors. Although Kate sought assistance from a prominent British medical expert for the early stages of anorexia a few years ago, insiders reveal that further treatment may be necessary. A doctor has recommended residential treatment to address her eating disorder. It is crucial for Kate to prioritize her health and well-being amidst the pressure she faces as a member of the royal family."
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "rewrite_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 rewrite generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-9075694215",
+      "text": "Joe Jonas enjoyed some sunshine in Australia along with a group of female companions, though Sophie Turner was notably absent. It appears that the singer was simply engaging with enthusiastic fans, who were eager to take photos with him on Bondi Beach in Sydney on February 22. Joe, who is currently in Australia filming the upcoming season of The Voice Australia, took the opportunity to connect with his admirers while his fianc\u00e9e took care of her own commitments. Prior to his trip, the couple had spent quality time together on a secluded island in the Maldives and celebrated Sophie's 22nd birthday in New York City on February 21. Joe's brother, Nick Jonas, even expressed his fondness for Sophie on social media, proving her warmth and acceptance within the family. It is evident that Sophie Turner has no issue with Joe being photographed with other women, as evidenced by her birthday video tribute on Instagram. In it, she can be seen enjoying Taylor Swift's song \"22,\" a cheeky reference to Joe's past relationship with the pop star. It is clear that any lingering history between the two former flames has no bearing on Sophie's understanding and confidence in their current relationship. Rest assured, HollywoodLifers, while Sophie may not be in Australia with Joe, their bond remains strong."
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "rewrite_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 rewrite generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-610873029",
+      "text": "Anna Wintour, the current Editor in Chief of Vogue magazine, holds an esteemed position within the realm of magazine publishing, complemented by her noteworthy net worth of $35 million. Her journey commenced within the fashion industry and later transitioned into the field of journalism, fueled in part by her parents' encouragement. In 1970, Wintour commenced her career as an editorial assistant for the newly launched Harper's & Queen fashion magazine. Even at that nascent stage, her aspirations of editing Vogue were evident, eventually fulfilled almost two decades later. Wintour, from her inaugural issue onwards, swiftly implemented significant transformations within the pages of Vogue. Notably, these modifications were apparent right on the magazine's cover. Departing from the magazine's previous preference for tightly framed headshots, Wintour favored a more naturalistic style of photography, showcasing lesser-known models in outdoor settings. Moreover, Wintour's debut Vogue cover shattered conventions as it featured a model clad in jeans, the first of its kind, accentuated by a lavishly adorned T-shirt valued at approximately $10,000. Under Wintour's leadership, Vogue has remained a pivotal pillar within the realm of fashion journalism, maintaining its influential stance without wavering."
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact13887",
+      "text": "Brian Kline, who earns $11.66 an hour working in retail and is being treated for cancer thanks to Medicaid, asked Health and Human Services Secretary Tom Price why he wanted to take away his Medicaid expansion at a CNN town hall. Price responded that the goal was to ensure that every American has access to care and coverage they want, but that current healthcare costs were unsustainable and that tough choices needed to be made. Those choices, he argued, included cutting Medicaid benefits or taking out more loans from countries like China. While he understood that such an approach sound insensitive, it was necessary to confront the practical reality facing the nation."
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact14750",
+      "text": "It has been revealed that a woman who claimed that Roy Moore pursued her when she was a teenager is a strong supporter of the Democratic Party and has worked for the DNC. Deborah Wesson Gibson, also known as Debbie Gibson, has interpreted for campaigns for Joe Biden and Hillary Clinton, and has expressed her support for Doug Jones in the Alabama Senate race. In addition, she strongly opposes Roy Moore as evidenced by her social media activity. The Moore campaign alleges that the Washington Post, which endorsed Jones, has been bribing people to find negative information about Moore. Moore himself claims that this is a smear campaign orchestrated by Democrats who hate him for his biblical morality, and urges supporters to pray for him and donate to his campaign."
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "paraphrase_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact13720",
+      "text": "US President Donald Trump has signed an executive order which now allows all Ghana nationals to travel to the US without visas for Tourism or Business purposes only, staying a maximum of 180 days. However, if Ghanaians hold dual nationality including a passport from Syria, Iraq, Iran, Sudan, Libya, Somalia or Yemen, they will be banned from entering the US. The order is aimed at strengthening trade relations between the two countries. Executive orders have also been signed regarding environmental concerns and high-priority infrastructure projects. Trump also signed an executive order on Monday barring federal funds from international organizations that promote abortion. He withdrew the United States from the Trans-Pacific Partnership trade deal on Monday."
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "rewrite_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 rewrite generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact14259",
+      "text": "Los Angeles prosecutors have charged Bumble Bee Foods and two of its managers with violating safety regulations in the death of a worker who was killed by being inadvertently placed in an industrial oven with tons of canned tuna. Jose Melena was reportedly performing maintenance in a 35-foot-long oven at the company's Santa Fe Springs plant when a worker mistakenly filled the pressure cooker with 12,000 pounds of tuna and turned it on, upon mistakenly believing Melena was in the bathroom. Upon realising that Melena was missing, a search ensued during which Melena's body was found in oven, after it had been turned off and opened. The company, its plant operations director, Angel Rodriguez and former safety manager, Saul Florez, have all been charged with three counts of violating Occupational Safety & Health Administration rules that caused a death. Rodriguez and Florez could face up to three years in prison and fines of up to $250,000 if they are convicted, whilst Bumble Bee Foods faces a maximum fine of $1.5m."
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "rewrite_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 rewrite generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact15591",
+      "text": "Broward County Sheriff Scott Israel has been dismissed over claims of a cover-up in relation to the Parkland school shooting. The decision to remove Sheriff Israel was made following a criminal investigation by Florida Governor Rick Scott. Reports suggest that Sheriff Israel could be replaced as early as next week. Sources reveal that Sheriff Israel is being removed for suspected criminal offences, rather than malfeasance, and that he is also reportedly being investigated by the IRS. Despite his public criticism of FBI Director Christopher Wray following the Parkland shooting, Sheriff Israel's own handling of the tragedy has been called into question. Police officers, under his instructions, were called to the home of the Parkland shooter 45 times prior to the school shooting. Sheriff Israel's removal appears to be linked to a criminal matter that the FBI is aware of, although it is unclear why law enforcement officials failed to investigate the Parkland shooter properly. Nevertheless, their failure has been attributed to the loss of 17 lives. In addition to his handling of the Parkland shooting, Sheriff Israel has been heavily criticised for his close association with Democratic politicians like Hillary Clinton and Debbie Wasserman Schultz, which has led some to speculate that his political views may have influenced his actions as sheriff. Other controversies relating to the sheriff's department include accusations of a cover-up over an alleged assault by Sheriff Israel's son, Brett, on a 14 year old student on campus, and a controversial tweet from the Broward County Sheriff's office about a custom made Broward sheriff's car."
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "provenance": "external_dataset",
+      "generation_method": "rewrite_generation",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 rewrite generation of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact15606",
+      "text": "Tragic events of a house explosion in New Jersey must be clarified: there is no evidence of foul play. The couple who perished in the explosion, John Paladino and Carole Paladino, were longtime residents of the area. However, there have been unsubstantiated claims linking Carole Paladino's potential testimony against the Clinton Foundation to the explosion. The expected testimony concerned a pharmaceutical company that had donated to the Clinton Foundation, allegedly in an effort to cover up their drug price gouging crimes. This claim is part of a larger narrative that suggests there is a \"Clinton body count\". It should be noted that there is no factual basis for such claims and they should be viewed as unfounded conspiracy theories. Regardless, this tragedy has brought attention to the important issue of medical scams in the US, such as EpiPen price gouging, and the devastating impact of the opioid crisis."
     }
   ]
 }

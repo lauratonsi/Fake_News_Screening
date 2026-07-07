@@ -119,6 +119,17 @@ def run_adversarial() -> None:
         for prov in provenances
     }
 
+    # Generation-method breakdown, external_dataset items only: are ChatGPT-3.5
+    # paraphrases and rewrites equally hard to catch, or is the effect an
+    # artifact of one specific prompting method? Robustness check for the
+    # external_dataset headline number.
+    external_results = [r for r in ai_fluent_results if r.get("provenance") == "external_dataset"]
+    methods = sorted({r.get("generation_method", "unknown") for r in external_results})
+    by_generation_method = {
+        method: _summarize([r for r in external_results if r.get("generation_method", "unknown") == method])
+        for method in methods
+    }
+
     payload = {
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "system": "SVM + Bi-GRU + Bi-LSTM ensemble with reference-corpus heuristic",
@@ -126,6 +137,7 @@ def run_adversarial() -> None:
         "by_length": by_length,
         "by_style_fake": by_style_fake,
         "by_provenance_ai_fluent": by_provenance_ai_fluent,
+        "by_generation_method": by_generation_method,
         "results": results,
     }
     config.ADVERSARIAL_RESULTS_FILE.write_text(json.dumps(payload, indent=2))
@@ -153,6 +165,12 @@ def run_adversarial() -> None:
     for prov, s in by_provenance_ai_fluent.items():
         recall = f"{s['recall_fake']:.1%}" if s["recall_fake"] is not None else "n/a"
         print(f"{prov:<20} {s['n']:>3} {recall:>20}")
+
+    print(f"\n{'generation method (external)':<30} {'n':>3} {'recall':>10}")
+    print("-" * 46)
+    for method, s in by_generation_method.items():
+        recall = f"{s['recall_fake']:.1%}" if s["recall_fake"] is not None else "n/a"
+        print(f"{method:<30} {s['n']:>3} {recall:>10}")
 
     wrong = [r for r in results if not r["correct"]]
     if wrong:
