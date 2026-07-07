@@ -2,7 +2,7 @@
 
 Usage:
     python -m src.evaluate                # print the in-domain metrics report
-    python -m src.evaluate --adversarial  # run the 30 out-of-domain scenarios
+    python -m src.evaluate --adversarial  # run the out-of-domain scenario benchmark
 
 The in-domain metrics are produced by ``src.train`` on the shared held-out
 test split and stored in ``models/metrics.json``. The adversarial benchmark

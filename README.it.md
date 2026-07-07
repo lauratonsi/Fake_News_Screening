@@ -228,9 +228,11 @@ adversarial.
 Questo campione `external_dataset` è cresciuto tre volte — 6, poi 18, ora
 **43** scenari — aggiungendo ogni volta metodi di generazione, non solo
 volume: parafrasi e riscrittura di disinformazione reale (i due originali),
-generazione open-ended, sei sotto-strategie `information_manipulation` che
+generazione open-ended, cinque sotto-strategie `information_manipulation` che
 distorcono articoli PolitiFact realmente **veri** trasformandoli in
-disinformazione, e un piccolo gruppo
+disinformazione (il dataset ne offre sei; la sesta, *description ambiguity*,
+ha prodotto solo candidati inutilizzabili alla revisione manuale), e un
+piccolo gruppo
 `hallucination`/`partially_arbitrary_generation` fabbricato da un prompt
 senza nessun articolo seed (quest'ultimo gruppo ha anche aggiunto un dominio
 `science` al campione esterno). Ogni candidato che superava i filtri
@@ -268,7 +270,7 @@ qualcosa di più del rumore; tutto ciò che è stato aggiunto a n=43 ha n≤10 e
 | Parafrasi della bufala originale | 12 | **75,0%** |
 | Riscrittura completa della bufala originale | 6 | **33,3%** |
 | Generazione open-ended (stessi articoli seed) | 10 | 90,0% |
-| `information_manipulation` (6 sotto-strategie, aggregate) | 12 | 75,0% |
+| `information_manipulation` (5 sotto-strategie, aggregate) | 11 | 81,8% |
 | `hallucination` / `partially_arbitrary_generation` (senza articolo seed) | 4 | 75,0% |
 
 Una riscrittura lascia ancora al modello molta più libertà di ristrutturare
@@ -276,8 +278,10 @@ il testo di quanta ne dia una parafrasi, e quel divario specifico (75,0%
 contro 33,3%) è l'unico asse di questa tabella abbastanza vecchio da
 fidarsene. I nuovi gruppi sono direzionalmente interessanti —
 `information_manipulation`, che distorce articoli realmente veri invece di
-riformulare bufale già esistenti, ha ottenuto un recall alto quanto la
-parafrasi — ma ciascuno è ancora troppo piccolo per generalizzare.
+riformulare bufale già esistenti, aggregato ha ottenuto un recall
+leggermente *superiore* alla parafrasi (81,8%) — ma ciascuna delle sue
+cinque sotto-strategie ha n≤3, quindi quel dato aggregato è ancora troppo
+piccolo per generalizzare.
 
 **Il risultato citabile è la riga centrale della prima tabella.**
 `human_typical` ottiene 100% (23/23) contro `ai_fluent`/`external_dataset`

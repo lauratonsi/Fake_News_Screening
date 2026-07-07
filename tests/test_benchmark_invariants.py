@@ -35,7 +35,7 @@ Measured recall (the hoax "catch rate"):
   two mature, unchanged-since-n=18 buckets remain the most trustworthy
   individually: **75.0%** for paraphrase-generated text vs. **33.3%** for
   rewrite-generated text. Newer buckets added at n=43
-  (open_ended_generation, six information_manipulation sub-strategies,
+  (open_ended_generation, five information_manipulation sub-strategies,
   hallucination/partially_arbitrary_generation) are each n<=10 and tracked
   in ``by_generation_method``, but not yet individually trustworthy.
 * ``ai_fluent`` / ``hand_authored``: **50.0%** (4/8) — lower, but carries the

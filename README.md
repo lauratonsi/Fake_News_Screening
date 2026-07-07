@@ -212,8 +212,10 @@ data, which would have made it a leakage test, not an adversarial one.
 This `external_dataset` cohort has grown three times — 6, then 18, then
 **43** scenarios — each time adding generation methods, not just volume:
 paraphrase and rewrite of real misinformation (the original two), open-ended
-generation, six `information_manipulation` sub-strategies that distort real
-*true* PolitiFact articles into misinformation, and a small
+generation, five `information_manipulation` sub-strategies that distort real
+*true* PolitiFact articles into misinformation (the dataset offers six; the
+sixth, *description ambiguity*, produced only unusable candidates on manual
+review), and a small
 `hallucination`/`partially_arbitrary_generation` set fabricated from a prompt
 with no seed article at all (this last group also added a `science` domain
 to the external sample). Every candidate that survived the automated filters
@@ -247,14 +249,15 @@ n=43 is n≤10 and tracked, not yet trusted individually:
 | Paraphrase of the original hoax | 12 | **75.0%** |
 | Full rewrite of the original hoax | 6 | **33.3%** |
 | Open-ended generation (same seed articles) | 10 | 90.0% |
-| `information_manipulation` (6 sub-strategies, pooled) | 12 | 75.0% |
+| `information_manipulation` (5 sub-strategies, pooled) | 11 | 81.8% |
 | `hallucination` / `partially_arbitrary_generation` (no seed article) | 4 | 75.0% |
 
 A rewrite still gives the model far more latitude to restructure the text
 than a paraphrase does, and that specific gap (75.0% vs. 33.3%) is the one
 axis in this table old enough to trust. The new buckets are directionally
 interesting — `information_manipulation`, which distorts real *true* articles
-rather than rewording existing fakes, scored as high as paraphrase — but each
+rather than rewording existing fakes, pooled slightly *above* paraphrase
+(81.8%) — but each of its five sub-strategies is n≤3, so that pooled figure
 is too small to generalize from yet.
 
 **The citable result is the middle row of the first table.** `human_typical`
