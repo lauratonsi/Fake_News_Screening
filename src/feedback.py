@@ -1,4 +1,4 @@
-"""Lightweight feedback loop: capture user corrections for later use.
+"""Capture user corrections for later use — the write side of the feedback loop.
 
 A screening aid that never learns from being wrong stays wrong. This module
 appends one JSON line per user judgement to a local log. Those lines are the
@@ -8,7 +8,9 @@ raw material for three things the tool needs to actually improve over time:
   paste, not just the curated benchmark),
 * hard negatives to fold into a future training run (the false positives on
   true statements this system is known to produce), and
-* a growing corpus of user-verified claims the retrieval layer can draw on.
+* a growing corpus of user-verified claims the retrieval layer can draw on —
+  see ``src/incorporate_feedback.py`` for the read side that actually does
+  this, folding verified corrections into ``reference_corpus/``.
 
 The log is intentionally simple (append-only JSONL, no database, stdlib only)
 and lives under ``data/`` which is git-ignored — user submissions are not
@@ -53,6 +55,9 @@ def record_feedback(
         "agrees": agrees,
         "correct_label": correct_label,
         "comment": (comment or "").strip() or None,
+        # Set to True by src.incorporate_feedback once folded into the
+        # retrieval corpus, so re-running it is idempotent.
+        "incorporated": False,
     }
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
