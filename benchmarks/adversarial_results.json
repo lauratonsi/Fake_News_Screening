@@ -1,42 +1,129 @@
 {
-  "created": "2026-07-06T06:30:02+00:00",
+  "created": "2026-07-07T16:47:24+00:00",
   "system": "SVM + Bi-GRU + Bi-LSTM ensemble with reference-corpus heuristic",
   "summary": {
     "covid": {
-      "n": 10,
-      "accuracy": 0.9,
-      "precision_fake": 0.8333,
-      "recall_fake": 1.0,
+      "n": 13,
+      "accuracy": 0.8462,
+      "precision_fake": 0.8571,
+      "recall_fake": 0.8571,
       "false_positives": 1,
-      "false_negatives": 0,
+      "false_negatives": 1,
+      "flagged_for_review": 4
+    },
+    "economy": {
+      "n": 7,
+      "accuracy": 0.7143,
+      "precision_fake": 0.75,
+      "recall_fake": 0.75,
+      "false_positives": 1,
+      "false_negatives": 1,
       "flagged_for_review": 3
     },
     "mixed": {
-      "n": 10,
-      "accuracy": 0.8,
-      "precision_fake": 0.7143,
-      "recall_fake": 1.0,
-      "false_positives": 2,
-      "false_negatives": 0,
-      "flagged_for_review": 3
+      "n": 16,
+      "accuracy": 0.75,
+      "precision_fake": 0.75,
+      "recall_fake": 0.9,
+      "false_positives": 3,
+      "false_negatives": 1,
+      "flagged_for_review": 7
     },
     "politics": {
-      "n": 10,
-      "accuracy": 0.7,
-      "precision_fake": 0.625,
+      "n": 16,
+      "accuracy": 0.8125,
+      "precision_fake": 0.7692,
       "recall_fake": 1.0,
       "false_positives": 3,
+      "false_negatives": 0,
+      "flagged_for_review": 5
+    },
+    "science": {
+      "n": 6,
+      "accuracy": 0.6667,
+      "precision_fake": 1.0,
+      "recall_fake": 0.3333,
+      "false_positives": 0,
+      "false_negatives": 2,
+      "flagged_for_review": 2
+    },
+    "technology": {
+      "n": 6,
+      "accuracy": 0.8333,
+      "precision_fake": 0.75,
+      "recall_fake": 1.0,
+      "false_positives": 1,
       "false_negatives": 0,
       "flagged_for_review": 2
     },
     "overall": {
-      "n": 30,
-      "accuracy": 0.8,
-      "precision_fake": 0.7143,
-      "recall_fake": 1.0,
-      "false_positives": 6,
-      "false_negatives": 0,
+      "n": 64,
+      "accuracy": 0.7812,
+      "precision_fake": 0.7805,
+      "recall_fake": 0.8649,
+      "false_positives": 9,
+      "false_negatives": 5,
+      "flagged_for_review": 23
+    }
+  },
+  "by_length": {
+    "long": {
+      "n": 16,
+      "accuracy": 0.875,
+      "precision_fake": 0.9,
+      "recall_fake": 0.9,
+      "false_positives": 1,
+      "false_negatives": 1,
       "flagged_for_review": 8
+    },
+    "short": {
+      "n": 48,
+      "accuracy": 0.75,
+      "precision_fake": 0.7419,
+      "recall_fake": 0.8519,
+      "false_positives": 8,
+      "false_negatives": 4,
+      "flagged_for_review": 15
+    }
+  },
+  "by_style_fake": {
+    "ai_fluent": {
+      "n": 14,
+      "accuracy": 0.6429,
+      "precision_fake": 1.0,
+      "recall_fake": 0.6429,
+      "false_positives": 0,
+      "false_negatives": 5,
+      "flagged_for_review": 8
+    },
+    "human_typical": {
+      "n": 23,
+      "accuracy": 1.0,
+      "precision_fake": 1.0,
+      "recall_fake": 1.0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "flagged_for_review": 3
+    }
+  },
+  "by_provenance_ai_fluent": {
+    "external_dataset": {
+      "n": 6,
+      "accuracy": 0.8333,
+      "precision_fake": 1.0,
+      "recall_fake": 0.8333,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "flagged_for_review": 5
+    },
+    "hand_authored": {
+      "n": 8,
+      "accuracy": 0.5,
+      "precision_fake": 1.0,
+      "recall_fake": 0.5,
+      "false_positives": 0,
+      "false_negatives": 4,
+      "flagged_for_review": 3
     }
   },
   "results": [
@@ -44,6 +131,9 @@
       "domain": "politics",
       "label": "FAKE",
       "text": "Pope Francis officially endorsed Donald Trump for president in 2016.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.988,
       "model_scores": {
@@ -59,6 +149,9 @@
       "domain": "politics",
       "label": "FAKE",
       "text": "Hillary Clinton sold 20% of U.S. uranium to Russia through secret deals.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -74,6 +167,9 @@
       "domain": "politics",
       "label": "FAKE",
       "text": "Donald Trump won the popular vote but Democrats hid millions of illegal ballots.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.987,
       "model_scores": {
@@ -89,6 +185,9 @@
       "domain": "politics",
       "label": "FAKE",
       "text": "FBI found 30,000 deleted emails proving Clinton planned terrorist attacks.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.978,
       "model_scores": {
@@ -104,6 +203,9 @@
       "domain": "politics",
       "label": "FAKE",
       "text": "Obama wiretapped Trump Tower during the 2016 election campaign.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.996,
       "model_scores": {
@@ -119,6 +221,9 @@
       "domain": "politics",
       "label": "REAL",
       "text": "Donald Trump won the 2016 presidential election defeating Hillary Clinton.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.995,
       "model_scores": {
@@ -134,6 +239,9 @@
       "domain": "politics",
       "label": "REAL",
       "text": "FBI Director James Comey was fired by President Trump in May 2017.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.808,
       "model_scores": {
@@ -149,6 +257,9 @@
       "domain": "politics",
       "label": "REAL",
       "text": "Barack Obama served two terms as President from 2009 to 2017.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.358,
       "model_scores": {
@@ -164,6 +275,9 @@
       "domain": "politics",
       "label": "REAL",
       "text": "The U.S. Senate confirmed Neil Gorsuch to the Supreme Court in April 2017.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.002,
       "model_scores": {
@@ -179,6 +293,9 @@
       "domain": "politics",
       "label": "REAL",
       "text": "Hillary Clinton conceded the 2016 election in a phone call to Donald Trump.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -194,6 +311,9 @@
       "domain": "covid",
       "label": "FAKE",
       "text": "The COVID-19 vaccine changes your DNA and will be inherited by your children.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.901,
       "model_scores": {
@@ -209,6 +329,9 @@
       "domain": "covid",
       "label": "FAKE",
       "text": "A leaked study shows that masks reduce oxygen levels so much that they damage the brain permanently.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.975,
       "model_scores": {
@@ -217,13 +340,16 @@
         "lstm": 1.0
       },
       "reference_message": "no strong match \u2014 closest known snippet is real at 72% similarity (topical, not a verdict)",
-      "needs_review": false,
+      "needs_review": true,
       "correct": true
     },
     {
       "domain": "covid",
       "label": "FAKE",
       "text": "Secret hospital data prove that most people who died of COVID actually died because of the vaccine.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.971,
       "model_scores": {
@@ -239,6 +365,9 @@
       "domain": "covid",
       "label": "FAKE",
       "text": "According to a whistleblower, the WHO already had a cure for COVID in 2019 but decided to hide it.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -254,6 +383,9 @@
       "domain": "covid",
       "label": "FAKE",
       "text": "Several governments used fake COVID case numbers to justify permanent lockdowns and control the population.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.806,
       "model_scores": {
@@ -269,6 +401,9 @@
       "domain": "covid",
       "label": "REAL",
       "text": "Multiple countries temporarily suspended specific COVID-19 vaccines after reports of rare side effects.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.081,
       "model_scores": {
@@ -284,6 +419,9 @@
       "domain": "covid",
       "label": "REAL",
       "text": "Health authorities updated the definition of a COVID-19 case as testing capacity and knowledge improved.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.681,
       "model_scores": {
@@ -299,6 +437,9 @@
       "domain": "covid",
       "label": "REAL",
       "text": "During the pandemic, some governments asked social media platforms to remove content considered dangerous to public health.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.021,
       "model_scores": {
@@ -314,6 +455,9 @@
       "domain": "covid",
       "label": "REAL",
       "text": "Several studies confirmed that COVID-19 can cause long-term complications even in young adults.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.484,
       "model_scores": {
@@ -329,6 +473,9 @@
       "domain": "covid",
       "label": "REAL",
       "text": "International investigations found that some early COVID statistics were incomplete or delayed, creating confusion about the real impact.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.006,
       "model_scores": {
@@ -344,6 +491,9 @@
       "domain": "mixed",
       "label": "REAL",
       "text": "The European Central Bank unexpectedly raised interest rates after inflation remained above target.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.42,
       "model_scores": {
@@ -359,6 +509,9 @@
       "domain": "mixed",
       "label": "FAKE",
       "text": "A leaked memo reveals that all major banks secretly agreed to delete private debts on a specific date.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.991,
       "model_scores": {
@@ -374,6 +527,9 @@
       "domain": "mixed",
       "label": "REAL",
       "text": "The national football team qualified for the World Cup after winning the last qualifying match.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 0.974,
       "model_scores": {
@@ -389,6 +545,9 @@
       "domain": "mixed",
       "label": "FAKE",
       "text": "A viral video claims that the last World Cup final was replayed in secret because the result was manipulated.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -404,6 +563,9 @@
       "domain": "mixed",
       "label": "REAL",
       "text": "Astronomers announced the discovery of an Earth-sized exoplanet in the habitable zone of a nearby star.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -419,6 +581,9 @@
       "domain": "mixed",
       "label": "FAKE",
       "text": "Scientists confirmed that NASA hid evidence of a second moon orbiting the Earth for decades.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -434,6 +599,9 @@
       "domain": "mixed",
       "label": "REAL",
       "text": "Several European cities introduced low-emission zones to limit the most polluting cars in city centers.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.208,
       "model_scores": {
@@ -449,6 +617,9 @@
       "domain": "mixed",
       "label": "FAKE",
       "text": "According to anonymous police sources, all CCTV cameras in a major capital are now equipped with secret facial recognition lists for political opponents.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -464,6 +635,9 @@
       "domain": "mixed",
       "label": "REAL",
       "text": "A major streaming platform announced a new regulation that limits the use of deepfakes in political documentaries.",
+      "length": "short",
+      "style": "reporting",
+      "provenance": "hand_authored",
       "predicted": "REAL",
       "fake_probability": 0.376,
       "model_scores": {
@@ -479,6 +653,9 @@
       "domain": "mixed",
       "label": "FAKE",
       "text": "An internal report shows that social media companies can directly change users' memories by altering old photos in their private albums.",
+      "length": "short",
+      "style": "human_typical",
+      "provenance": "hand_authored",
       "predicted": "FAKE",
       "fake_probability": 1.0,
       "model_scores": {
@@ -487,6 +664,624 @@
         "lstm": 0.996
       },
       "reference_message": "closest match is a known fake claim (46% semantic similarity)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "science",
+      "label": "REAL",
+      "length": "short",
+      "style": "reporting",
+      "text": "NASA's Perseverance rover collected its first confirmed core sample of Martian bedrock in September 2021.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.462,
+      "model_scores": {
+        "svm": 0.762,
+        "gru": 0.007,
+        "lstm": 0.616
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 38% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "science",
+      "label": "REAL",
+      "length": "short",
+      "style": "reporting",
+      "text": "The World Health Organization declared mpox a public health emergency of international concern in 2022.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.264,
+      "model_scores": {
+        "svm": 0.323,
+        "gru": 0.119,
+        "lstm": 0.351
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 49% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "economy",
+      "label": "REAL",
+      "length": "short",
+      "style": "reporting",
+      "text": "The Bank of Japan ended its negative interest rate policy in March 2024 after seventeen years.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.158,
+      "model_scores": {
+        "svm": 0.079,
+        "gru": 0.034,
+        "lstm": 0.36
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 44% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "economy",
+      "label": "REAL",
+      "length": "short",
+      "style": "reporting",
+      "text": "The United Kingdom formally left the European Union's single market on 1 January 2021.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.82,
+      "model_scores": {
+        "svm": 0.5,
+        "gru": 0.97,
+        "lstm": 0.989
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 71% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "technology",
+      "label": "REAL",
+      "length": "short",
+      "style": "reporting",
+      "text": "The European Union's AI Act entered into force in August 2024 as the bloc's first comprehensive law on artificial intelligence.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.747,
+      "model_scores": {
+        "svm": 0.302,
+        "gru": 0.945,
+        "lstm": 0.994
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 47% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "technology",
+      "label": "REAL",
+      "length": "short",
+      "style": "reporting",
+      "text": "OpenAI released GPT-4 to the public in March 2023, expanding on the capabilities of its predecessor.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.047,
+      "model_scores": {
+        "svm": 0.097,
+        "gru": 0.013,
+        "lstm": 0.032
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 44% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "science",
+      "label": "FAKE",
+      "length": "short",
+      "style": "human_typical",
+      "text": "Leaked NASA documents reveal that the 1969 moon landing was secretly filmed in a Nevada studio.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 0.788,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "closest match is a known fake claim (51% semantic similarity)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "economy",
+      "label": "FAKE",
+      "length": "short",
+      "style": "human_typical",
+      "text": "A whistleblower claims the Federal Reserve secretly prints trillions of untraceable dollars for a hidden group of global bankers.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 0.988,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "closest match is a known fake claim (55% semantic similarity)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "technology",
+      "label": "FAKE",
+      "length": "short",
+      "style": "human_typical",
+      "text": "Insiders say every smartphone microphone secretly records conversations and sells the audio to foreign intelligence agencies.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.937,
+      "model_scores": {
+        "svm": 0.81,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 60% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "short",
+      "style": "human_typical",
+      "text": "According to anonymous airport staff, a major airline is secretly weighing passengers' luggage against a hidden facial-recognition database to profile travelers.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.985,
+      "model_scores": {
+        "svm": 0.954,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 42% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "science",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "A peer-reviewed study in the Journal of Clinical Nutrition found that a daily 500-milligram dose of magnesium citrate reverses early-stage osteoporosis within six weeks.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.291,
+      "model_scores": {
+        "svm": 0.12,
+        "gru": 0.0,
+        "lstm": 0.004
+      },
+      "reference_message": "closest match is a known fake claim (48% semantic similarity)",
+      "needs_review": false,
+      "correct": false
+    },
+    {
+      "domain": "science",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "Researchers at the Fraunhofer Institute reported a new lithium-sulfur battery chemistry reaching 620 watt-hours per kilogram in commercial pouch cells, roughly double current electric-vehicle energy density.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.368,
+      "model_scores": {
+        "svm": 0.126,
+        "gru": 0.0,
+        "lstm": 0.98
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 46% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "economy",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "An IMF working paper estimated that a coordinated 2% global wealth tax introduced in 2023 would lower sovereign debt ratios by an average of 11 percentage points within three years.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.974,
+      "model_scores": {
+        "svm": 0.928,
+        "gru": 0.995,
+        "lstm": 0.999
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 55% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "economy",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "The Bank for International Settlements reported that central bank digital currency pilots reduced cross-border settlement times from two days to under four hours across nine participating economies.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.184,
+      "model_scores": {
+        "svm": 0.548,
+        "gru": 0.002,
+        "lstm": 0.001
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 40% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "technology",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "A Stanford-MIT study found that adding a five-millisecond audio watermark to synthetic speech reduced successful voice-deepfake fraud attempts by 74% across a sample of 40 financial institutions.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.946,
+      "model_scores": {
+        "svm": 0.846,
+        "gru": 0.993,
+        "lstm": 0.999
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 45% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "technology",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "Regulatory filings show that a major cloud provider's new data center in Iceland cut its water-cooling consumption by 92% using a closed-loop geothermal exchange system.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.997,
+      "model_scores": {
+        "svm": 0.567,
+        "gru": 0.998,
+        "lstm": 0.677
+      },
+      "reference_message": "closest match is a known fake claim (51% semantic similarity)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "A Congressional Budget Office analysis found that the 2023 infrastructure reallocation bill will reduce interstate freight delays by an average of 38 minutes per trip by 2027.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.89,
+      "model_scores": {
+        "svm": 0.67,
+        "gru": 1.0,
+        "lstm": 0.999
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 48% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "length": "short",
+      "style": "ai_fluent",
+      "text": "A Lancet-published cohort study of 214,000 patients found that a widely prescribed antihistamine reduced long-COVID fatigue symptoms by 46% over twelve weeks.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.05,
+      "model_scores": {
+        "svm": 0.086,
+        "gru": 0.009,
+        "lstm": 0.054
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 51% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": false
+    },
+    {
+      "domain": "politics",
+      "label": "REAL",
+      "length": "long",
+      "style": "reporting",
+      "text": "The U.S. Senate voted 68 to 29 on Thursday to confirm the nomination, ending a confirmation process that had stretched over four months amid disputes on the Judiciary Committee. Supporters argued the nominee's record on antitrust enforcement made her a natural fit for the role, while opponents raised concerns about her past rulings on regulatory authority. The vote followed a similar pattern to previous confirmations this term, with most Republicans opposing the nomination and a handful of moderates from both parties crossing party lines. Analysts noted that the confirmation gives the administration its fourth appointment to the agency's leadership since taking office, a pace consistent with recent administrations. The nominee is expected to be sworn in within the next two weeks and will immediately join ongoing deliberations on several pending enforcement cases. In a statement released after the vote, the nominee thanked lawmakers on both sides of the aisle and pledged to enforce the law \"without fear or favor.\" The White House called the outcome a validation of its broader personnel strategy for the agency.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.313,
+      "model_scores": {
+        "svm": 0.003,
+        "gru": 0.0,
+        "lstm": 0.938
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 62% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "economy",
+      "label": "REAL",
+      "length": "long",
+      "style": "reporting",
+      "text": "Consumer prices rose 0.3% in November, in line with economists' expectations, as energy costs eased for a second consecutive month, the Bureau of Labor Statistics reported Tuesday. On an annual basis, inflation slowed to 3.1%, down from 3.4% in October, driven largely by falling gasoline prices and a moderation in shelter costs, which still account for the largest share of the index. Core inflation, which excludes volatile food and energy prices, held steady at 3.8% year-over-year, slightly above the Federal Reserve's long-term target. Policymakers have signaled they want to see several more months of consistent data before considering further changes to interest rates. Retailers reported steady holiday spending despite the higher price levels, with online sales up 6% compared with the same period last year. Economists at several major banks said the data supports a \"soft landing\" scenario in which inflation continues to cool without triggering a sharp rise in unemployment. The next inflation report is due in early January, ahead of the central bank's first policy meeting of the year.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.344,
+      "model_scores": {
+        "svm": 0.028,
+        "gru": 0.976,
+        "lstm": 0.027
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 53% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "science",
+      "label": "REAL",
+      "length": "long",
+      "style": "reporting",
+      "text": "A team of researchers at the Max Planck Institute published findings this week describing a new method for detecting gravitational lensing effects in distant galaxy clusters, using a machine-learning model trained on more than two million telescope images. The technique, described in a paper in Nature Astronomy, identifies subtle distortions in light caused by the gravity of massive objects far more quickly than earlier manual methods, which could take specialists weeks to review a single cluster. The team validated the model against known lensing events cataloged by the Hubble and James Webb telescopes and reported an accuracy of roughly 94% in identifying genuine lensing arcs. Independent astronomers not involved in the study said the approach could meaningfully speed up the search for dark matter distribution maps once applied to data from the upcoming Vera C. Rubin Observatory, which is expected to generate far more images than researchers can review manually. The authors cautioned that the model still requires manual confirmation for borderline cases and said they plan to release the training pipeline as open-source software later this year.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.042,
+      "model_scores": {
+        "svm": 0.033,
+        "gru": 0.001,
+        "lstm": 0.093
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 46% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "REAL",
+      "length": "long",
+      "style": "reporting",
+      "text": "Several major airlines announced this week that they will begin offering real-time turbulence forecasting to pilots using a shared data network that pools anonymized flight telemetry across carriers. The system, developed with input from the National Weather Service, cross-references altitude, speed and vibration data from thousands of flights to flag turbulence pockets that traditional radar can miss, particularly clear-air turbulence at cruising altitude. Airlines participating in the pilot program said early results suggest a meaningful reduction in unexpected in-flight incidents, though full statistics will not be published until the program completes its first full year. Passenger advocacy groups welcomed the move, noting that turbulence-related injuries, while rare, have risen in recent years as climate change is linked to more frequent clear-air turbulence at commercial cruising altitudes. Regulators said they are monitoring the rollout closely and may consider requiring similar systems industry-wide if the data proves reliable. The program is expected to expand to additional carriers by the end of next year.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 0.554,
+      "model_scores": {
+        "svm": 0.142,
+        "gru": 0.999,
+        "lstm": 0.522
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 38% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "technology",
+      "label": "REAL",
+      "length": "long",
+      "style": "reporting",
+      "text": "A major cloud computing provider announced Tuesday that it has completed the first phase of migrating its European data centers to run primarily on renewable energy sources, a project the company says has been underway since 2019. The announcement covers twelve facilities across Ireland, Germany and the Netherlands, which the company says now draw the majority of their power from wind and solar contracts signed directly with regional utilities. Independent energy analysts said the move reflects a broader trend among large technology firms to lock in long-term renewable contracts as a hedge against volatile energy prices, rather than purely as an environmental commitment. The company's sustainability report, published alongside the announcement, also disclosed that overall water usage for cooling across its European operations declined for the third straight year, attributing the drop to newer, more efficient cooling designs. Competing cloud providers have made similar pledges in recent years, though the pace of actual implementation has varied widely and remains difficult for outside observers to verify independently. The company said it expects to publish updated figures for its next reporting cycle in the spring.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.006,
+      "model_scores": {
+        "svm": 0.013,
+        "gru": 0.0,
+        "lstm": 0.005
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 45% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "REAL",
+      "length": "long",
+      "style": "reporting",
+      "text": "Health authorities in several countries updated their COVID-19 booster recommendations this fall to target more recent variants in circulation, following guidance from the World Health Organization's vaccine composition advisory group. The updated shots are formulated to better match strains that have been dominant since early in the year, rather than the original 2020 strain used in the first generation of vaccines. Officials emphasized that the update follows the same seasonal approach used for influenza vaccines, which are reformulated annually based on circulating strains rather than because earlier versions have failed. Clinical data reviewed by regulators showed the updated boosters produced a stronger antibody response against currently circulating variants compared with the prior formulation, though officials cautioned that real-world effectiveness data will continue to be collected over the coming months. Uptake of the updated boosters has varied significantly by country, with several public health agencies launching new outreach campaigns ahead of the winter respiratory illness season. Pharmacies in most participating countries began offering the updated shots alongside seasonal flu vaccines.",
+      "provenance": "hand_authored",
+      "predicted": "REAL",
+      "fake_probability": 0.001,
+      "model_scores": {
+        "svm": 0.001,
+        "gru": 0.0,
+        "lstm": 0.0
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 71% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "human_typical",
+      "text": "According to several anonymous congressional staffers, a secret addendum to last year's budget bill diverts nearly $40 billion to a classified program that political insiders describe only as \"the continuity initiative.\" None of the lawmakers who allegedly voted for the addendum will confirm its existence on the record, and a leaked internal memo \u2014 which several fact-checking sites have dismissed as fabricated \u2014 claims the funding bypasses normal oversight committees entirely. Whistleblowers say the program has existed in some form since the 1990s, hidden inside classified riders that few members of Congress ever actually read before voting. Critics argue this is exactly how the political establishment keeps the public in the dark about where trillions of tax dollars really go every year. One self-described former Pentagon contractor, speaking only on condition of anonymity, claimed to have seen internal documents referencing the program by a classified codename, though no such documents have ever been independently verified or made public. Despite repeated requests for comment, congressional offices have either denied the program's existence or declined to respond at all \u2014 which supporters of the theory say only proves how deep the cover-up really goes.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 0.945,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "closest match is a known fake claim (53% semantic similarity)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "covid",
+      "label": "FAKE",
+      "length": "long",
+      "style": "human_typical",
+      "text": "A viral post circulating on social media claims that leaked internal emails from a major vaccine manufacturer prove the company knew about severe, undisclosed side effects years before its COVID-19 vaccine was approved. The post, shared tens of thousands of times, alleges that regulators were secretly pressured to fast-track approval despite internal warnings from company scientists who were reportedly silenced or forced to sign non-disclosure agreements. No verified copies of the alleged emails have surfaced, and several fact-checking organizations have found no evidence the documents are genuine, but supporters insist mainstream outlets are refusing to cover the story because of undisclosed financial ties to pharmaceutical advertisers. Some versions of the post go further, claiming that hospitals were secretly instructed to misclassify vaccine injuries as unrelated conditions to keep official statistics artificially low. Several anonymous accounts claiming to be former hospital employees have echoed the allegations online, though none have provided documentation or agreed to be identified. The claim continues to circulate widely despite repeated debunking, with new variations of the story appearing every few months under different framing.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 0.973,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "closest match is a known fake claim (64% semantic similarity)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "human_typical",
+      "text": "A widely shared video claims to show 'proof' that a major social media platform secretly throttles the reach of posts that criticize its advertisers, using an internal ranking system insiders have nicknamed 'the dampener.' The video, narrated by an anonymous former employee whose face is blurred throughout, alleges that the system was built specifically to protect major ad revenue relationships and has never been disclosed to regulators or the public. No source code, internal documents, or verifiable evidence accompanies the claims beyond the narrator's testimony, and the platform has denied the allegations in a brief statement. Supporters of the claim argue that the total absence of hard evidence is itself suspicious, insisting that a company capable of hiding a global surveillance-scale ranking system would obviously also be capable of hiding the evidence of it. The video has been re-uploaded under dozens of different titles after each original upload was removed, which proponents cite as further proof of an active cover-up rather than routine content moderation. Several tech journalists who reviewed the video's claims said they could not verify a single specific technical detail described in it.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 1.0,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 50% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "economy",
+      "label": "FAKE",
+      "length": "long",
+      "style": "human_typical",
+      "text": "An anonymously authored report circulating in online trading forums claims that a coordinated group of hedge funds secretly agreed to short a mid-size regional bank's stock in order to trigger a liquidity crisis and buy up its assets at a steep discount. The report cites unnamed 'sources close to the matter' and a supposedly leaked group chat transcript, though no verified copies of the transcript have been produced and the bank in question has stated it saw no unusual trading patterns beyond normal market volatility. Proponents of the theory argue that regulators have deliberately avoided investigating the claims because several commissioners have undisclosed personal ties to the funds allegedly involved. The theory has picked up traction after a well-known finance commentator shared it without independent verification, adding that 'this is exactly how they always do it' and urging followers to withdraw deposits as a precaution. Several economists who reviewed the publicly available trading data said the described pattern is indistinguishable from ordinary short-selling activity that occurs constantly in volatile markets, but the claim continues to circulate, gaining new anonymous 'confirmations' each week.",
+      "provenance": "hand_authored",
+      "predicted": "FAKE",
+      "fake_probability": 1.0,
+      "model_scores": {
+        "svm": 0.667,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "closest match is a known fake claim (51% semantic similarity)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact14085",
+      "text": "According to reports, Bill O'Reilly was approached by two women and three men at a bagel shop in New York City who expressed their disgust towards his alleged behavior towards women at Fox News. After being told to leave him alone, one of the men grabbed O'Reilly and he was then violently attacked by the other two men until he was rendered unconscious and bleeding. The attackers fled the scene and the police arrived within minutes, taking O'Reilly to St. Vincent's hospital where he is in critical condition with injuries that may be life-threatening. The family is asking for privacy and the police are seeking witnesses or evidence of the attack. Some liberals have praised the attack as deserved, which highlights the hypocrisy of their beliefs against cruel and unusual punishment.",
+      "provenance": "external_dataset",
+      "predicted": "FAKE",
+      "fake_probability": 0.838,
+      "model_scores": {
+        "svm": 0.519,
+        "gru": 1.0,
+        "lstm": 0.995
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is fake at 69% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact14699",
+      "text": "Michigan DNR responded to an urgent call reporting a giant squid that had landed on Leland. Marine Biologist Dr. Debra Polowotski examined the specimen, which happened to be a freshwater species of the Architeuthis genus, confirming its rarity. The squid's presence in Lake Michigan came as a surprise as authorities were under the impression that the Cleveland Sea World complex contained all the squids. However, it was discovered that some had escaped and made their way to Lake Erie. The squids were contained in Lake Erie as they require vast spaces and are intimidated by closed-in areas. It was revealed that the discovered squid is a female and had laid eggs. Dr. Polowotski warns that exercise caution while swimming or boating as the walleye may not control the small population of these squids.",
+      "provenance": "external_dataset",
+      "predicted": "FAKE",
+      "fake_probability": 0.998,
+      "model_scores": {
+        "svm": 0.993,
+        "gru": 1.0,
+        "lstm": 1.0
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 51% similarity (topical, not a verdict)",
+      "needs_review": false,
+      "correct": true
+    },
+    {
+      "domain": "politics",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=politifact13942",
+      "text": "The government has put in place a new rule stating that all motorcycles must have a governor fitted by mid-January 2017 to prevent them from exceeding 75 miles per hour. This regulation aims to reduce motorcycle fatalities in the US, with many politicians having long pushed for stricter safety measures. Major motorcycle manufacturers were offered a large tax break by the government in 2014 to fit governors on all new motorcycles, but they declined. The US Department of Transportation played a key role in implementing the new regulation and has emphasized the need for it, saying that the majority of motorcycle fatalities are due to unsafe speeds. Exceptions have been made for states allowing higher speeds, and designated shops will offer subsidies for retrofitting motorcycles with the speed governor. Failure to comply with the new rule may result in fines for both riders and manufacturers.",
+      "provenance": "external_dataset",
+      "predicted": "FAKE",
+      "fake_probability": 0.662,
+      "model_scores": {
+        "svm": 0.015,
+        "gru": 0.975,
+        "lstm": 0.996
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 44% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-3967904178",
+      "text": "Tune in to Entertainment Tonight on Yahoo View. There have always been rumors and speculation surrounding the relationship of Gwen Stefani and Blake Shelton. This time, it is being reported by In Touch Weekly that Shelton ended things with Stefani in February before going on tour. However, recent photos posted by Stefani on Instagram show the two appearing quite affectionate on stage. These photos are not the first instances of Stefani sharing pictures since February. She also posted a jumbotron kiss and pictures of herself with other people backstage. She has also publicly supported Shelton through social media, even wishing him well when he was sick. According to an insider, the rumors of the breakup are false, but Stefani's social media behavior is seen as a desperate attempt to ignore the truth. It is speculated that Shelton ended things due to Stefani's neediness, drama, and jealousy. Reasons for this include her critical ex-husband and her discomfort with Shelton's relationship with other women, including voice champion Chloe Kohanski and his ex-wife Miranda Lambert. While Shelton does not reciprocate Stefani's social media gestures, he does have a picture of her as his profile photo. For more updates, visit Yahoo Entertainment.",
+      "provenance": "external_dataset",
+      "predicted": "FAKE",
+      "fake_probability": 0.82,
+      "model_scores": {
+        "svm": 0.463,
+        "gru": 0.999,
+        "lstm": 1.0
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 45% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": true
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-1369753636",
+      "text": "Megyn shouldn't be too concerned about the National Enquirer, as they have supported absurd claims in the past. Does anyone actually take this publication seriously? It's clear that Trump's allies at the National Enquirer are once again defending him. The New York Times and Washington Post are also guilty of biased reporting, but the National Enquirer at least knows that few people believe its stories. Other publications, on the other hand, pretend to be legitimate journalists. Chelsea Clinton is trying to bond with Megyn over this issue, but it's not appropriate. It's unlikely that they will become friends because of it. Some people are suggesting that the National Enquirer will create false reports about Megyn, including a scandalous lesbian affair. However, she is not a Clinton, so this is unlikely to happen. It's interesting to see how some of Chelsea's supporters are being mean to Megyn because of her past support for Trump. They seem to hold a grudge against her. Despite all of this, Megyn shouldn't feel sorry for herself. She has made controversial statements in the past and some people don't like her because of it. Chelsea may have hoped for a love fest in bonding over the National Enquirer, but her followers are being too mean to Megyn. Clearly, Chelsea didn't anticipate this response, but we did.",
+      "provenance": "external_dataset",
+      "predicted": "REAL",
+      "fake_probability": 0.42,
+      "model_scores": {
+        "svm": 0.772,
+        "gru": 0.302,
+        "lstm": 0.187
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 57% similarity (topical, not a verdict)",
+      "needs_review": true,
+      "correct": false
+    },
+    {
+      "domain": "mixed",
+      "label": "FAKE",
+      "length": "long",
+      "style": "ai_fluent",
+      "source": "Chen, C. & Shu, K. (2024). Can LLM-Generated Misinformation Be Detected? ICLR 2024. LLMFake dataset (github.com/llm-misinformation/llm-misinformation), ChatGPT-3.5 paraphrase of a human-written misinformation claim, PolitiFact/GossipCop subset (CoAID subset excluded: confirmed text overlap with this project's own COVID training data). news_id=gossipcop-8511922365",
+      "text": "According to a new report, Angelina Jolie might be getting married again. She has supposedly been dating a mysterious man for several months without telling her ex-husband Brad Pitt. Although she is still legally married to Brad, Angelina is allegedly planning her fourth wedding to a wealthy businessman in his forties. The couple began dating in early 2017 and have been keeping their relationship very secret. Angelina has chosen not to tell Brad about her new relationship and hopes to surprise him. She has also not shared the news with her children, fearing that they will inform their father. The wedding will reportedly take place in Cambodia, Angelina's second home, and will be a traditional Buddhist ceremony. The couple plans to wear traditional Cambodian attire and serve local dishes at the reception. Angelina's closest friends and family will be in attendance, and her children will have roles in the wedding. It is unclear how Brad will react when he learns about Angelina's plans.",
+      "provenance": "external_dataset",
+      "predicted": "FAKE",
+      "fake_probability": 0.762,
+      "model_scores": {
+        "svm": 0.311,
+        "gru": 0.976,
+        "lstm": 0.999
+      },
+      "reference_message": "no strong match \u2014 closest known snippet is real at 61% similarity (topical, not a verdict)",
       "needs_review": true,
       "correct": true
     }

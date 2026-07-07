@@ -11,12 +11,57 @@ clean, reproducible pipeline: **dataset analysis → models → Streamlit demo**
 Live demo: https://fake-news-screening.streamlit.app/
 
 > **The honest headline:** the ensemble scores **94.6%** on a leakage-free
-> in-domain test set and **80.0%** on 30 out-of-domain adversarial scenarios,
-> with **zero false negatives** — it never waves a hoax through; every error
-> is an over-cautious false positive on a true statement. The retrieval layer
-> is used to *find* the closest known real/fake claims, not to assert truth
-> from topical similarity — see *"Two very different uses of embeddings"* below
-> for why that distinction matters and what it costs.
+> in-domain test set and **78.1%** on 64 out-of-domain adversarial scenarios
+> spanning short claims and long articles, six topic domains, and two
+> disinformation *styles*. Against classic, human-typical disinformation
+> (secret, leaked, whistleblower-style tropes) it holds **zero false
+> negatives** — no such hoax is ever waved through. Against fluent,
+> source-attributed prose with none of those tropes, tested on real
+> ChatGPT-3.5 paraphrases of documented misinformation (not written by this
+> project — see below for why that matters), recall drops to **83%** — a
+> real but far more modest gap than a first, methodologically flawed pass at
+> this question suggested. That gap, and how it was measured, is the honest
+> finding: see *"AI-generated disinformation is harder to detect"* below. The
+> retrieval layer is used to *find* the closest known real/fake claims, not to
+> assert truth from topical similarity — see *"Two very different uses of
+> embeddings"* for why that distinction matters and what it costs.
+
+## Motivation & research context
+
+This tool grew out of a study on **cognitive security** — the protection of
+human judgement from deliberate manipulation. The premise is that the frontier
+of security has moved: modern hybrid operations increasingly target *how people
+decide* rather than the machines they use, so the classic CIA triad
+(confidentiality, integrity, availability) no longer covers the whole attack
+surface. Generative AI sharpens the asymmetry — a hostile actor can now
+manufacture thousands of persuasive, native-sounding variants of a false story
+at near-zero marginal cost, while verification stays slow and expensive.
+
+Two ideas from that work shape the design directly:
+
+- **"Fake news" is the wrong unit of analysis.** Wardle & Derakhshan's
+  *Information Disorder* framework (Council of Europe, 2017) separates
+  *misinformation* (false, shared without intent to harm), *disinformation*
+  (false, deliberately harmful) and *malinformation* (true content weaponised
+  to harm). A text classifier can only ever touch the content-falsity signal of
+  the first two — it is blind to intent, and structurally blind to
+  malinformation, where the content is true. So the honest ceiling of a system
+  like this is **screening, not verdict**: it belongs inside a human process,
+  not in place of one.
+- **You cannot defend what you have not tested.** The same reason security
+  teams run adversarial exercises is why the out-of-domain scenarios live in
+  the repo as a permanent, repeatable stress test (see the benchmark below)
+  rather than a one-off number — and why the layers added on top of the
+  classifier lean toward *inoculation* (surfacing the manipulation techniques a
+  reader is being targeted with) rather than a bare true/false stamp. That same
+  benchmark is also where the research question gets a measurable, if
+  uncomfortable, partial answer: see *"AI-generated disinformation is harder to
+  detect"* below.
+
+The original research question was, in short: *what can and cannot be automated
+in the defence of the information space, and where must the human stay in the
+loop?* This repository is the applied, measurable half of that answer — a
+working system built to be honest about its own limits.
 
 ## The problem with "99% accuracy"
 
@@ -70,6 +115,141 @@ documents why those numbers are a red flag rather than a result:
    (spread > 0.40), the verdict is marked low-confidence instead of being
    reported as certain.
 
+## Reliability & prebunking layers
+
+Four layers sit on top of the classifier to make it usable as a real screening
+aid rather than a demo — each chosen to attack a measured weakness of the
+base models (see the adversarial benchmark: every error is a confident false
+positive on a *true* short claim).
+
+8. **Live fact-check as a first-class verdict** — a Google Fact Check rating
+   (a professional fact-checker's verdict) now *overrides* the ensemble for the
+   headline result, not just a side panel. It is the only signal that is both
+   authoritative and *current*, so it is what lets the tool be right about
+   events the 2015–2020 training data never saw. ([`src/predict.py`](src/predict.py))
+9. **Confidence tiers, not false certainty** — every result carries a
+   `confidence` level and an `evidence_backed` flag. A model-only verdict on a
+   short, out-of-domain claim (exactly where the models are confidently wrong)
+   is reported as a **low-confidence screening signal to verify**, never as a
+   settled truth. This only lowers confidence — it *never* flips FAKE→REAL, so
+   the zero-false-negative guarantee is preserved.
+10. **Manipulation-technique detection (prebunking / inoculation)** — a
+    domain- and time-robust layer that flags *how* a text tries to persuade
+    (appeal to hidden knowledge, unverifiable source, fabricated authority,
+    fear language, false certainty, urgency, us-vs-them), each with a short
+    explanation. Following Roozenbeek & van der Linden (2019), naming the
+    technique inoculates the reader better than a true/false stamp. It is
+    orthogonal to the classifier — on the benchmark it fires on 17 of the 23
+    classic-style hoaxes and none of the true statements the models over-flag —
+    and it raises the review flag without ever changing the label. It shares
+    most of the classifier's blind spot on fluent, LLM-style fakes, though (2
+    of 6 real ones flagged, 0 of 8 hand-authored ones): see below.
+    ([`src/manipulation.py`](src/manipulation.py))
+11. **Explainability & a feedback loop** — the SVM is linear, so its score
+    decomposes exactly into per-token contributions (TF-IDF × coefficient); the
+    demo shows the words pushing toward FAKE and toward REAL. A 👍/👎 + correct-
+    label form logs corrections to a local JSONL file — the raw material for a
+    real-world evaluation set and a future retraining round on the known hard
+    cases. ([`src/explain.py`](src/explain.py), [`src/feedback.py`](src/feedback.py))
+
+The out-of-domain benchmark stays offline and reproducible (no live calls), so
+these layers improve real-world behaviour without inflating the measured
+78.1%. A regression test
+([`tests/test_benchmark_invariants.py`](tests/test_benchmark_invariants.py))
+gates the guarantee that actually holds — **zero false negatives on
+classic-style disinformation** and an overall accuracy floor — on every run,
+without pretending the AI-fluent gap below does not exist.
+
+## AI-generated disinformation is harder to detect
+
+This is a direct, partial answer to the research question behind this project
+(see *Motivation* above): **does removing the stylistic tells of
+disinformation also remove a defender's ability to catch it?** The section
+below also documents a methodological correction made mid-project — the
+finding got weaker, and more trustworthy, after fixing a flaw in how it was
+first measured.
+
+The 64-scenario benchmark tags every fabricated scenario with a `style`:
+
+- **`human_typical`** (23 scenarios) — classic disinformation tropes: *secret
+  deals*, *a leaked memo*, *according to a whistleblower*, *anonymous sources*.
+  This is the register the training corpora (ISOT/WELFake, both largely
+  human-written, pre-2021) are full of.
+- **`ai_fluent`** (14 scenarios) — the same kind of fabricated claim, written
+  as fluent, calm, source-attributed prose with none of those tropes: a
+  named-sounding institution, a specific statistic, a hedge about methodology
+  — the register a modern LLM produces by default when asked to write
+  persuasive text (see Goldstein et al., 2023; Helmus & Chandra, 2024, cited
+  in *Motivation*).
+
+**Why `ai_fluent` is split by `provenance`, and why that matters more than the
+headline number.** The first version of this benchmark had every `ai_fluent`
+scenario hand-written for this project — by an LLM, with full knowledge of
+what this system's manipulation-technique detector looks for. That is
+circular: it measures whether a defense can be evaded by someone who already
+knows how it works, not whether disinformation *actually produced* by an LLM
+evades it. To fix this, 6 of the 14 `ai_fluent` scenarios (all the long,
+article-length ones) were replaced with real ChatGPT-3.5-generated
+misinformation — paraphrases of documented, human-written hoaxes, drawn
+(fixed random seed, no cherry-picking) from Chen & Shu's **LLMFake dataset**
+([ICLR 2024](https://github.com/llm-misinformation/llm-misinformation), whose
+own finding is that "LLM-generated misinformation can be harder to detect for
+humans and detectors compared to human-written misinformation with the same
+semantics"). Before using it, its CoAID subset was checked and dropped: a
+text-overlap check found it leaks into this project's own COVID-19 training
+data, which would have made it a leakage test, not an adversarial one. The
+remaining 8 short `ai_fluent` scenarios are still hand-written — no clean
+public corpus of *short-claim* LLM-paraphrased misinformation exists (CoAID
+would have been the candidate, and is exactly the one that had to be
+excluded) — and are kept in the benchmark as a disclosed, exploratory
+data point, not the headline.
+
+Measured recall (the hoax "catch rate"), `python -m src.evaluate --adversarial`:
+
+| Style / provenance | n | Recall (catch rate) | Manipulation layer flags |
+|---|---|---|---|
+| `human_typical` (hand-authored) | 23 | **100%** (0 missed) | 17/23 (74%) |
+| `ai_fluent` / **`external_dataset`** (real, not written by this project) | 6 | **83.3%** (1 missed) | 2/6 (33%) |
+| `ai_fluent` / `hand_authored` (exploratory, circularity caveat above) | 8 | 50.0% (4 missed) | 0/8 (0%) |
+
+**The citable result is the middle row.** Restricted to the same two domains
+(politics, entertainment/mixed) so the comparison is apples-to-apples,
+`human_typical` scores 100% (13/13) against `ai_fluent`/`external_dataset` at
+83.3% (5/6) — a real, non-circular, ~17-point gap. The bottom row is weaker
+evidence: still directionally consistent, but the hand-authored construction
+cannot rule out having been implicitly tuned against this system's own
+detection logic.
+
+**A retraction, in the interest of the same honesty this README asks of the
+system.** The first version of this section additionally claimed a "second,
+independent confirmation" of the effect via input length: overall accuracy on
+long, article-length scenarios measured 56.2%, versus 75.0% on short claims,
+attributed to generative fluency not degrading with length the way
+human-written coherence does. That claim does not survive the fix above: with
+6 of the hand-written long scenarios replaced by real external data, **long-
+scenario accuracy is now 87.5%** — higher than short (75.0%), the opposite of
+the original claim. The original "length effect" was not a property of
+length at all; it was an artifact of every long scenario in that version
+having been hand-written adversarially. It is removed here rather than
+quietly updated, because the mistake — trusting an effect measured entirely
+on self-authored text — is itself the lesson: **any claim about what defeats
+this system that is measured only on text written by the same system (or its
+own developer) needs independent, non-circular data before it is trusted.**
+
+**What this does and does not mean for the system's guarantees.** The
+zero-false-negative claim made throughout this README is real, but it is now
+explicitly scoped: it holds for disinformation written the way most
+documented, historical disinformation has been written. Against fluent,
+LLM-paraphrased fabrication it holds less well — a real, moderate gap (100%
+vs. 83.3% on independently-sourced data), not the near-total blind spot an
+earlier, methodologically circular measurement suggested. Per the *Motivation*
+section above, this is consistent with, not a failure of, the system's design
+premise: a **screening aid inside a human process**, not an automated
+arbiter. The honest next step — not yet implemented — would be extending the
+`external_dataset` cohort (e.g. the same LLMFake dataset's other generation
+methods, or its Llama2/Vicuna variants) to get a larger, still-independent
+sample, particularly at claim-length.
+
 ## Pipeline & Figures
 
 The full pipeline is documented in [PIPELINE.md](PIPELINE.md). It shows the
@@ -106,26 +286,57 @@ flowchart LR
 | Bi-LSTM | 92.9% | 94.1% | 89.9% | 92.0% |
 | **Ensemble (mean)** | **94.6%** | 94.5% | 93.3% | 93.9% |
 
-**Out-of-domain** — 30 adversarial scenarios (plausible hoaxes, uncomfortable
-truths), `python -m src.evaluate --adversarial` →
+**Out-of-domain** — 64 adversarial scenarios (plausible hoaxes, uncomfortable
+truths — short claims and long articles, six domains, two disinformation
+styles), `python -m src.evaluate --adversarial` →
 [`benchmarks/adversarial_results.json`](benchmarks/adversarial_results.json):
 
 | Domain | Accuracy | False positives | False negatives | Flagged for review |
 |---|---|---|---|---|
-| Politics | 70% | 3 | 0 | 2 |
-| COVID | 90% | 1 | 0 | 3 |
-| Mixed | 80% | 2 | 0 | 3 |
-| **Overall** | **80.0%** | 6 | 0 | 8 |
+| Politics | 81.2% | 3 | 0 | 5 |
+| COVID | 84.6% | 1 | 1 | 4 |
+| Mixed | 75.0% | 3 | 1 | 7 |
+| Economy | 71.4% | 1 | 1 | 3 |
+| Science | 66.7% | 0 | 2 | 2 |
+| Technology | 83.3% | 1 | 0 | 2 |
+| **Overall** | **78.1%** | 9 | 5 | 23 |
 
-Every error is a **false positive on a true statement** ("Donald Trump won the
-2016 election…" → FAKE): the 2015–2017 training window taught the classifiers
-that short factual claims about US politics *look like* fake-news bait, and the
-retrieval layer deliberately no longer "rescues" them by treating a
-same-topic real article as proof (see the next section). This is the
-temporal/stylistic bias surviving every mitigation — the reason the demo
-presents itself as a screening aid, not a truth oracle. What matters for a
-disinformation tool is the other column: **zero false negatives**, no hoax
-waved through.
+By **length** — short claims vs. long, article-length scenarios:
+
+| Length | n | Accuracy |
+|---|---|---|
+| Short | 48 | 75.0% |
+| Long | 16 | 87.5% |
+
+*(An earlier version of this table showed long scenarios scoring markedly
+worse (56.2%) and framed that as a second, independent confirmation of the
+AI-fluency effect. It was not: every long scenario in that version was
+hand-written, and the "length effect" disappeared — reversed, in fact — once
+6 of them were replaced with real, externally-sourced text. See the retraction
+in *"AI-generated disinformation is harder to detect"* above.)*
+
+By **style**, FAKE scenarios only — the recall (hoax "catch rate") that
+matters most for a disinformation tool:
+
+| Style | n | Recall (catch rate) |
+|---|---|---|
+| `human_typical` (classic tropes) | 23 | **100.0%** |
+| `ai_fluent` (LLM-style, fluent — blended, see above) | 14 | 64.3% |
+
+`ai_fluent` blends two provenances with very different evidentiary weight —
+see *"AI-generated disinformation is harder to detect"* above for the
+citable, non-circular breakdown (83.3% on real external data vs. 50.0% on
+hand-authored text).
+
+The false positives repeat the original finding — a **false positive on a
+true statement** ("Donald Trump won the 2016 election…" → FAKE): the
+2015–2017 training window taught the classifiers that short factual claims
+about US politics *look like* fake-news bait, and the retrieval layer
+deliberately no longer "rescues" them by treating a same-topic real article as
+proof (see the next section). Every false negative is an `ai_fluent`-style
+hoax — the zero-false-negative guarantee holds **only** for classic-style
+disinformation, not for fluent, LLM-style fabrication (see above for exactly
+how much it does not hold).
 
 ## Reporting Takeaways
 
@@ -154,10 +365,17 @@ plus a calibrated linear classifier, trained and evaluated on the *exact
 same* fused dataset and split as `src.train`
 (`experiments/embeddings_baseline.py`, `experiments/embeddings_adversarial.py`).
 
-| | In-domain | Out-of-domain (30 scenarios) |
+| | In-domain | Out-of-domain (30-scenario benchmark) |
 |---|---|---|
 | Current ensemble (TF-IDF + SVM/GRU/LSTM) | 94.6% | 80.0% |
 | MiniLM embeddings + linear classifier | 88.5% | 60% |
+
+*Historical snapshot, frozen for comparability: measured against the original
+30-scenario benchmark, before it was expanded to 64 scenarios (adding new
+domains, long-form articles, and the human-typical/AI-fluent style split — see
+"AI-generated disinformation is harder to detect" above). This ablation was a
+one-time comparison of classification approaches, not a maintained benchmark,
+so it was not rerun against the expanded set.*
 
 The embeddings-based classifier lost on both axes — sharpest on WELFake
 (67.1% vs. 86.9%) and on the adversarial "mixed" domain. This is the measured
@@ -200,12 +418,13 @@ disinformation tool. So the reference layer is now asymmetric:
   surfaced as neutral evidence ("closest known snippet is real at 69%"), never
   as a verdict.
 
-This costs about three points of adversarial accuracy (83.3% → 80.0%, one
-true COVID statement no longer "rescued" by a same-topic real article) — a
-cost worth paying: the panels can no longer contradict the headline, and the
-demo never presents a false claim as supported. Embedding similarity simply
-does not separate "same claim, reworded" from "same topic, different claim"
-cleanly enough to be trusted as a truth signal, only as retrieved evidence.
+This cost about three points of adversarial accuracy at the time (83.3% →
+80.0%, measured on the original 30-scenario benchmark; one true COVID
+statement no longer "rescued" by a same-topic real article) — a cost worth
+paying: the panels can no longer contradict the headline, and the demo never
+presents a false claim as supported. Embedding similarity simply does not
+separate "same claim, reworded" from "same topic, different claim" cleanly
+enough to be trusted as a truth signal, only as retrieved evidence.
 
 **Why both were affordable at once:** the RNNs now run as TFLite models via
 the ~10 MB `ai-edge-litert` interpreter instead of the full TensorFlow
@@ -231,7 +450,7 @@ aid inside a human process**, not an automated arbiter of truth.
 
 The versioned adversarial benchmark follows the same logic that cognitive
 security literature applies to institutions — *you cannot defend what you have
-not tested*: the 30 scenarios are kept in the repo as a permanent, repeatable
+not tested*: the 64 scenarios are kept in the repo as a permanent, repeatable
 stress test rather than a one-off experiment.
 
 ## Repository layout
@@ -247,6 +466,9 @@ stress test rather than a one-off experiment.
 │   ├── rag.py              reference-corpus retrieval (semantic embeddings)
 │   ├── claim_rag.py        per-claim retrieval analysis
 │   ├── external_retrieval.py  live evidence (Google Fact Check / Wikipedia / GDELT)
+│   ├── manipulation.py     prebunking layer: rhetorical manipulation techniques
+│   ├── explain.py          per-token SVM contributions (exact linear explanation)
+│   ├── feedback.py         append-only user-correction log (JSONL)
 │   └── tokenizer.py        framework-independent tokenizer (no TF at serving time)
 ├── tests/                  pytest suite: split protocol, ensemble logic, retrieval
 ├── models/                 trained artifacts incl. TFLite RNNs (~8 MB) and the
@@ -348,6 +570,15 @@ Fact Check is skipped and Wikipedia is the default live source.
   reserved for near-verbatim matches (`REF_OVERRIDE_THRESHOLD = 0.90`).
 - The RNNs are trained on a 5,000-article subsample (CPU budget); the SVM sees
   the full training set.
-- Out-of-domain accuracy (80.0%) is the number that matters for real-world
-  use, and it is why any deployment of a system like this needs a human in
-  the loop.
+- Out-of-domain accuracy (78.1% overall) is the number that matters for
+  real-world use, and it is why any deployment of a system like this needs a
+  human in the loop.
+- **Fluent, LLM-style disinformation is a measured, moderate weak point, not a
+  theoretical one.** Recall on classic-style hoaxes is 100%; on real,
+  independently-sourced ChatGPT-3.5 paraphrases of documented misinformation
+  it drops to 83.3% (see *"AI-generated disinformation is harder to detect"*
+  above). Both the classifier and the manipulation-technique layer key partly
+  on surface features of *how humans have historically written*
+  disinformation, and neither fully replaces that signal when it is absent —
+  though the gap is real rather than the near-total blind spot an earlier,
+  methodologically circular measurement in this same repo had suggested.

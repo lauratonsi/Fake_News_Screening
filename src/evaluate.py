@@ -62,17 +62,14 @@ def run_adversarial() -> None:
             }
         )
 
-    domains = sorted({c["domain"] for c in scenarios})
-    summary = {}
-    for domain in domains + ["overall"]:
-        subset = [r for r in results if domain == "overall" or r["domain"] == domain]
+    def _summarize(subset: list[dict]) -> dict:
         tp = sum(r["label"] == "FAKE" and r["predicted"] == "FAKE" for r in subset)
         tn = sum(r["label"] == "REAL" and r["predicted"] == "REAL" for r in subset)
         fp = sum(r["label"] == "REAL" and r["predicted"] == "FAKE" for r in subset)
         fn = sum(r["label"] == "FAKE" and r["predicted"] == "REAL" for r in subset)
-        summary[domain] = {
+        return {
             "n": len(subset),
-            "accuracy": round((tp + tn) / len(subset), 4),
+            "accuracy": round((tp + tn) / len(subset), 4) if subset else None,
             "precision_fake": round(tp / (tp + fp), 4) if tp + fp else None,
             "recall_fake": round(tp / (tp + fn), 4) if tp + fn else None,
             "false_positives": fp,
@@ -80,10 +77,55 @@ def run_adversarial() -> None:
             "flagged_for_review": sum(r["needs_review"] for r in subset),
         }
 
+    domains = sorted({c["domain"] for c in scenarios})
+    summary = {
+        domain: _summarize([r for r in results if domain == "overall" or r["domain"] == domain])
+        for domain in domains + ["overall"]
+    }
+
+    # Length breakdown: are short claims and long articles caught equally well?
+    lengths = sorted({c.get("length", "short") for c in scenarios})
+    by_length = {
+        length: _summarize([r for r in results if r.get("length", "short") == length])
+        for length in lengths
+    }
+
+    # Style breakdown, FAKE scenarios only: recall_fake (the hoax "catch rate")
+    # for classic human-style disinformation (secret/leaked/whistleblower
+    # tropes) vs fluent, source-attributed prose with none of those tropes.
+    # NOTE: this blends two provenances within `ai_fluent` (see below) and is
+    # kept for transparency, but by_provenance_ai_fluent is the citable,
+    # non-circular number. See README "AI-generated disinformation is harder
+    # to detect".
+    fake_results = [r for r in results if r["label"] == "FAKE"]
+    styles = sorted({c.get("style", "human_typical") for c in scenarios if c["label"] == "FAKE"})
+    by_style_fake = {
+        style: _summarize([r for r in fake_results if r.get("style", "human_typical") == style])
+        for style in styles
+    }
+
+    # Provenance breakdown, ai_fluent FAKE scenarios only: `external_dataset`
+    # items are ChatGPT-3.5 paraphrases of real human-written misinformation
+    # drawn from Chen & Shu's LLMFake dataset (ICLR 2024) — nobody on this
+    # project wrote them, so they carry no risk of being (consciously or not)
+    # adversarially tuned against this specific system. `hand_authored` items
+    # were written for this benchmark and, while designed only to avoid overt
+    # tropes, cannot rule out that risk. This split is what makes the headline
+    # ai_fluent-vs-human_typical comparison citable rather than circular.
+    ai_fluent_results = [r for r in fake_results if r.get("style") == "ai_fluent"]
+    provenances = sorted({r.get("provenance", "hand_authored") for r in ai_fluent_results})
+    by_provenance_ai_fluent = {
+        prov: _summarize([r for r in ai_fluent_results if r.get("provenance", "hand_authored") == prov])
+        for prov in provenances
+    }
+
     payload = {
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "system": "SVM + Bi-GRU + Bi-LSTM ensemble with reference-corpus heuristic",
         "summary": summary,
+        "by_length": by_length,
+        "by_style_fake": by_style_fake,
+        "by_provenance_ai_fluent": by_provenance_ai_fluent,
         "results": results,
     }
     config.ADVERSARIAL_RESULTS_FILE.write_text(json.dumps(payload, indent=2))
@@ -94,12 +136,31 @@ def run_adversarial() -> None:
         print(f"{domain:<10} {s['n']:>3} {s['accuracy']:>9.1%} "
               f"{s['false_positives']:>4} {s['false_negatives']:>4} "
               f"{s['flagged_for_review']:>7}")
+
+    print(f"\n{'length':<10} {'n':>3} {'accuracy':>9}")
+    print("-" * 26)
+    for length, s in by_length.items():
+        print(f"{length:<10} {s['n']:>3} {s['accuracy']:>9.1%}")
+
+    print(f"\n{'FAKE style':<16} {'n':>3} {'recall (catch rate)':>20}")
+    print("-" * 42)
+    for style, s in by_style_fake.items():
+        recall = f"{s['recall_fake']:.1%}" if s["recall_fake"] is not None else "n/a"
+        print(f"{style:<16} {s['n']:>3} {recall:>20}")
+
+    print(f"\n{'ai_fluent provenance':<20} {'n':>3} {'recall (catch rate)':>20}")
+    print("-" * 46)
+    for prov, s in by_provenance_ai_fluent.items():
+        recall = f"{s['recall_fake']:.1%}" if s["recall_fake"] is not None else "n/a"
+        print(f"{prov:<20} {s['n']:>3} {recall:>20}")
+
     wrong = [r for r in results if not r["correct"]]
     if wrong:
         print("\nErrors:")
         for r in wrong:
             kind = "FP (censorship risk)" if r["label"] == "REAL" else "FN (missed hoax)"
-            print(f"  [{r['domain']}] {kind}: {r['text'][:70]}...")
+            style = r.get("style", "")
+            print(f"  [{r['domain']}/{style}] {kind}: {r['text'][:70]}...")
     print(f"\nResults written to {config.ADVERSARIAL_RESULTS_FILE}")
 
 

@@ -1,5 +1,5 @@
 from src import config
-from src.predict import combine_verdict
+from src.predict import _aggregate_live_verdict, combine_verdict
 
 NO_REFERENCE = {"verdict": None, "score": 0.0, "message": "no strong match", "evidence": []}
 
@@ -66,3 +66,81 @@ def test_fake_boost_and_real_override_pin_to_the_extremes():
                            {"verdict": "REAL", "score": config.REF_OVERRIDE_THRESHOLD + 0.05, "evidence": []})
     assert low["fake_probability"] == 0.0
     assert "override" in low["reason"]
+
+
+# --- A1: live fact-check verdict is a first-class, top-priority signal -------
+
+def test_live_fake_verdict_overrides_the_ensemble():
+    # Models are confident REAL, but a professional fact-checker rated it FAKE.
+    scores = {"svm": 0.05, "gru": 0.02, "lstm": 0.03}  # ensemble -> REAL
+    live = {"verdict": "FAKE", "source": "google_fact_check", "evidence": []}
+    result = combine_verdict(scores, NO_REFERENCE, live=live)
+    assert result["verdict"] == "FAKE"
+    assert result["fake_probability"] == 1.0
+    assert result["confidence"] == "high"
+    assert result["evidence_backed"] is True
+    assert "fact-check" in result["reason"]
+
+
+def test_live_real_verdict_rescues_a_true_claim_the_models_flag():
+    # The dominant failure mode: models scream FAKE on a true short claim.
+    # A live REAL fact-check corrects the headline verdict and marks the
+    # model/fact-check conflict for a reviewer.
+    scores = {"svm": 0.99, "gru": 0.99, "lstm": 0.99}  # ensemble -> confident FAKE
+    live = {"verdict": "REAL", "source": "google_fact_check", "evidence": []}
+    result = combine_verdict(scores, NO_REFERENCE, live=live, n_words=8)
+    assert result["verdict"] == "REAL"
+    assert result["fake_probability"] == 0.0
+    assert result["needs_review"] is True  # conflicts with a confident ensemble
+    assert result["evidence_backed"] is True
+
+
+def test_live_verdict_takes_precedence_over_reference_override():
+    scores = {"svm": 0.5, "gru": 0.5, "lstm": 0.5}
+    reference = {"verdict": "FAKE", "score": config.REF_OVERRIDE_THRESHOLD + 0.05, "evidence": []}
+    live = {"verdict": "REAL", "source": "google_fact_check", "evidence": []}
+    result = combine_verdict(scores, reference, live=live)
+    assert result["verdict"] == "REAL"
+
+
+# --- A2/A3: confidence tier without ever flipping FAKE->REAL -----------------
+
+def test_short_model_only_verdict_is_low_confidence_but_still_flags_fake():
+    # A short claim the models call FAKE with no external evidence: keep the
+    # FAKE label (zero-false-negative guarantee) but mark it low confidence.
+    scores = {"svm": 0.97, "gru": 0.98, "lstm": 0.96}  # agree, spread tiny
+    result = combine_verdict(scores, NO_REFERENCE, n_words=9)
+    assert result["verdict"] == "FAKE"          # label preserved, not abstained
+    assert result["confidence"] == "low"        # ... but not asserted as certain
+    assert result["evidence_backed"] is False
+
+
+def test_long_in_domain_agreement_is_medium_confidence():
+    scores = {"svm": 0.9, "gru": 0.88, "lstm": 0.91}
+    result = combine_verdict(scores, NO_REFERENCE, n_words=200)
+    assert result["confidence"] == "medium"
+
+
+def test_model_disagreement_is_low_confidence_regardless_of_length():
+    scores = {"svm": 0.95, "gru": 0.10, "lstm": 0.50}  # spread 0.85
+    result = combine_verdict(scores, NO_REFERENCE, n_words=200)
+    assert result["confidence"] == "low"
+    assert result["needs_review"] is True
+
+
+# --- live-verdict aggregation from claim analysis ---------------------------
+
+def test_aggregate_live_verdict_prioritises_fake():
+    claim_analysis = {"claims": [
+        {"claim": "a", "live": {"verdict": "REAL", "source": "google_fact_check"}},
+        {"claim": "b", "live": {"verdict": "FAKE", "source": "google_fact_check"}},
+    ]}
+    assert _aggregate_live_verdict(claim_analysis)["verdict"] == "FAKE"
+
+
+def test_aggregate_live_verdict_is_none_without_a_verdict():
+    claim_analysis = {"claims": [
+        {"claim": "a", "live": {"verdict": None, "source": "wikipedia"}},
+        {"claim": "b", "live": None},
+    ]}
+    assert _aggregate_live_verdict(claim_analysis) is None

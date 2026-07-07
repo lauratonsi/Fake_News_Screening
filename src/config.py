@@ -120,6 +120,27 @@ GOOGLE_FACTCHECK_LANGUAGE = "en"
 # input for human review instead of pretending to be confident.
 DISAGREEMENT_SPREAD = 0.40
 
+# --- Input-type gating / confidence ------------------------------------------
+# The classifiers are trained on full news *articles*; a short, claim-length
+# input is out of domain for them, and that is exactly where they produce
+# confident false positives on true statements (every adversarial-benchmark
+# error is a false positive on a short true claim). Below this word count a
+# model-only verdict — one with no live fact-check verdict and no near-verbatim
+# corpus match to back it — is reported as LOW confidence and routed to human
+# verification, instead of being presented as a settled truth judgement. This
+# only lowers confidence; it never flips FAKE->REAL, so the zero-false-negative
+# guarantee is preserved.
+SHORT_INPUT_WORDS = 40
+
+# --- Manipulation-technique layer (prebunking / inoculation) ------------------
+# A complementary, domain- and time-robust signal: it flags *how* a text tries
+# to persuade (appeal to hidden knowledge, unverifiable source, fake authority,
+# fear language, false certainty, urgency, polarization). See src/manipulation.py.
+# This never flips the FAKE/REAL label — it is surfaced as evidence and can
+# raise the human-review flag when several techniques stack up.
+MANIPULATION_TECHNIQUES_FOR_FULL_SCORE = 4  # this many distinct techniques -> score 1.0
+MANIPULATION_REVIEW_MIN_TECHNIQUES = 3      # at/above this, flag for review
+
 # --- Artifact locations --------------------------------------------------------
 SVM_FILE = MODELS_DIR / "svm_tfidf.joblib"
 GRU_FILE = MODELS_DIR / "gru.keras"
@@ -133,3 +154,33 @@ REF_FAKE_FILE = REFERENCE_DIR / "fake.csv.gz"
 REF_EMBEDDINGS_FILE = REFERENCE_DIR / "embeddings.npz"
 SCENARIOS_FILE = BENCHMARKS_DIR / "adversarial_scenarios.json"
 ADVERSARIAL_RESULTS_FILE = BENCHMARKS_DIR / "adversarial_results.json"
+
+# User feedback log (append-only JSONL). Under data/, which is git-ignored, so
+# user submissions are never committed. See src/feedback.py.
+FEEDBACK_LOG = DATA_DIR / "feedback.jsonl"
+
+# Minimum overall accuracy the 64-scenario adversarial benchmark must hold
+# (measured 78.1%; floor set with a margin below that). The hard invariant is
+# zero false negatives on classic ("human_typical") disinformation, not overall
+# accuracy — this floor only guards against a silent further drop. See
+# tests/test_benchmark_invariants.py.
+ADVERSARIAL_ACCURACY_FLOOR = 0.70
+
+# Minimum recall (catch rate) on "ai_fluent"-style FAKE scenarios: fluent,
+# source-attributed prose with none of the classic disinformation tropes (see
+# README "AI-generated disinformation is harder to detect"). Split by
+# provenance because that split is what makes the finding citable rather than
+# circular:
+#   - `external_dataset` (6 scenarios): ChatGPT-3.5 paraphrases of real
+#     human-written misinformation from Chen & Shu's LLMFake dataset (ICLR
+#     2024) — nobody on this project wrote them, so this is the trustworthy,
+#     non-circular number. Measured recall: 83.3%, vs. 100% on human_typical
+#     hoaxes in the same domains — a real but modest gap.
+#   - `hand_authored` (8 scenarios): written for this benchmark specifically
+#     to avoid overt tropes. Measured recall: 50.0% — markedly lower, but
+#     cannot rule out (consciously or not) being tuned against this system's
+#     own detection logic, so it is disclosed as exploratory, not headlined.
+# Both floors are DISCLOSED limitations, not targets: they only stop a future
+# change from making either number silently worse.
+AI_FLUENT_RECALL_FLOOR_EXTERNAL = 0.65
+AI_FLUENT_RECALL_FLOOR_HAND_AUTHORED = 0.30

@@ -114,20 +114,75 @@ if st.button("Analyze", type="primary") and text.strip():
         st.stop()
 
     st.divider()
+    confidence = result.get("confidence", "medium")
+    evidence_backed = result.get("evidence_backed", False)
+    live = result.get("live")
+
     color = "red" if result["verdict"] == "FAKE" else "green"
+    # A model-only verdict on a short/out-of-domain claim is a *screening flag*,
+    # not a settled truth judgement — say so plainly instead of a confident
+    # colour. Only an evidence-backed verdict gets the strong red/green.
+    if confidence == "low" and not evidence_backed:
+        color = "#b8860b"  # amber: uncertain, needs verification
+    headline = "Verdict" if evidence_backed else "Screening signal"
     st.markdown(
-        f"<h2 style='text-align:center;color:{color};'>Verdict: {result['verdict']}</h2>",
+        f"<h2 style='text-align:center;color:{color};'>{headline}: {result['verdict']}</h2>",
         unsafe_allow_html=True,
     )
+
+    badge = {"high": "🟢 High confidence", "medium": "🟡 Medium confidence",
+             "low": "🟠 Low confidence — verify"}.get(confidence, "")
     st.markdown(
         f"<h4 style='text-align:center;'>Fake probability: "
-        f"{result['fake_probability']:.1%} &nbsp;|&nbsp; {result['reason']}</h4>",
+        f"{result['fake_probability']:.1%} &nbsp;|&nbsp; {badge}</h4>"
+        f"<p style='text-align:center;color:gray;'>{result['reason']}</p>",
         unsafe_allow_html=True,
     )
+
+    # A1: the live fact-check verdict is the highest-signal evidence — surface
+    # it prominently when it drove or conflicts with the headline.
+    if live and live.get("verdict"):
+        src = live.get("source") or "fact-check"
+        if live["verdict"] == "FAKE":
+            st.error(f"⛔ **Live fact-check ({src}): rated FALSE.** This is a "
+                     "professional fact-checker's verdict and takes precedence.")
+        else:
+            st.success(f"✅ **Live fact-check ({src}): rated TRUE.** A professional "
+                       "fact-checker corroborates this claim.")
+
+    if confidence == "low" and not evidence_backed:
+        st.warning(
+            "⚠️ **Low confidence.** No external evidence (live fact-check or a "
+            "near-verbatim known article) corroborates this, and the input is a "
+            "short, out-of-domain claim — the range the models get wrong most "
+            "often, always by over-flagging true statements. Treat this as a "
+            "prompt for human verification, not a verdict."
+        )
     if result["needs_review"]:
         st.error(
-            "⚠️ The models disagree strongly on this text — the verdict is "
-            "low-confidence and would be routed to a human reviewer."
+            "⚠️ The models disagree strongly (or conflict with a fact-checker) "
+            "on this text — it would be routed to a human reviewer."
+        )
+
+    # --- Manipulation techniques (the prebunking / inoculation layer) --------
+    manipulation = result.get("manipulation", {})
+    if manipulation.get("count", 0) > 0:
+        st.subheader("🎯 Manipulation techniques detected")
+        st.caption(
+            "How the text tries to persuade you — independent of whether the "
+            "underlying claim is true. Naming the technique is *inoculation*: it "
+            "builds resistance better than a bare true/false label. This is "
+            "evidence, not a verdict — honest reporting can use forceful "
+            "language too."
+        )
+        for tech in manipulation["techniques"]:
+            quoted = ", ".join(f"“{m}”" for m in tech["matches"][:6])
+            st.markdown(f"**{tech['label']}** — {tech['explanation']}")
+            st.caption(f"Flagged phrasing: {quoted}")
+    else:
+        st.caption(
+            "🎯 No manipulation techniques detected in the phrasing (this checks "
+            "*how* the text argues, not whether the claim is true)."
         )
 
     col1, col2 = st.columns(2)
@@ -205,3 +260,63 @@ if st.button("Analyze", type="primary") and text.strip():
                     if url:
                         st.caption(url)
                 st.divider()
+
+    # --- Why the SVM scored this (exact linear contributions) ----------------
+    explanation = result.get("explanation", {})
+    if explanation.get("available"):
+        st.subheader("Why the SVM scored this")
+        st.caption(
+            "The SVM is a linear model, so its score decomposes exactly into "
+            "per-word contributions (TF-IDF weight × model coefficient) — this "
+            "is the model's own arithmetic, not a post-hoc approximation. The "
+            "RNNs stay black boxes by nature."
+        )
+        ecol1, ecol2 = st.columns(2)
+        with ecol1:
+            st.markdown("**Pushed toward FAKE**")
+            for c in explanation["fake_pushing"][:6]:
+                st.markdown(f"- 🟥 `{c['token']}` (+{c['weight']:.3f})")
+            if not explanation["fake_pushing"]:
+                st.caption("—")
+        with ecol2:
+            st.markdown("**Pushed toward REAL**")
+            for c in explanation["real_pushing"][:6]:
+                st.markdown(f"- 🟩 `{c['token']}` ({c['weight']:.3f})")
+            if not explanation["real_pushing"]:
+                st.caption("—")
+
+    # --- Feedback loop: capture corrections to improve the tool over time ----
+    st.divider()
+    st.subheader("Was this helpful?")
+    st.caption(
+        "Your feedback is logged locally to build a real-world evaluation set "
+        "and to collect the hard cases (especially true statements wrongly "
+        "flagged) for a future retraining round."
+    )
+    with st.form("feedback_form", clear_on_submit=True):
+        agree = st.radio(
+            "Is the screening result correct?",
+            ["👍 Yes, correct", "👎 No, wrong"],
+            horizontal=True,
+        )
+        correct_label = st.selectbox(
+            "If wrong, what is the correct label?",
+            ["(leave blank)", "REAL (true statement)", "FAKE (false claim)"],
+        )
+        comment = st.text_input("Optional comment")
+        if st.form_submit_button("Submit feedback"):
+            from src.feedback import record_feedback
+
+            label = None
+            if correct_label.startswith("REAL"):
+                label = "REAL"
+            elif correct_label.startswith("FAKE"):
+                label = "FAKE"
+            record_feedback(
+                text,
+                result,
+                agrees=agree.startswith("👍"),
+                correct_label=label,
+                comment=comment,
+            )
+            st.success("Thanks — your feedback was recorded.")
