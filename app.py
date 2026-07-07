@@ -88,10 +88,10 @@ with st.sidebar:
   everything else is out of domain past that window.
 - Reference-corpus matching is **semantic similarity, not verification** —
   it cannot confirm a claim it has never seen in any wording.
-- Out-of-domain accuracy is **73.7%** (vs. 94.6% in-domain) on a 76-scenario
+- Out-of-domain accuracy is **76.2%** (vs. 94.6% in-domain) on a 101-scenario
   adversarial benchmark — see the README for the full breakdown.
 - **Fluent, AI-generated disinformation is measurably harder to catch than
-  classic-style hoaxes**: 100% vs. ~61% recall on 18 real, independently-
+  classic-style hoaxes**: 100% vs. ~74% recall on 43 real, independently-
   sourced test cases (see the README's *"AI-generated disinformation is
   harder to detect"*). Treat every result as a screening aid, not a truth oracle —
   especially on calm, well-sourced-sounding claims.

@@ -1,17 +1,23 @@
 """Regression gate on the committed adversarial benchmark.
 
-The 76-scenario benchmark (``benchmarks/adversarial_scenarios.json``) tags
+The 101-scenario benchmark (``benchmarks/adversarial_scenarios.json``) tags
 every FAKE scenario with a ``style`` (``human_typical`` vs ``ai_fluent``) and,
 for ``ai_fluent`` items, a ``provenance``:
 
-* **``external_dataset``** (18 scenarios) — ChatGPT-3.5 paraphrases/rewrites
-  of real human-written misinformation, drawn (fixed random seed, stratified
-  by domain and generation method, no cherry-picking) from Chen & Shu's
-  LLMFake dataset (ICLR 2024, github.com/llm-misinformation/llm-misinformation),
-  PolitiFact/GossipCop subset. Nobody on this project wrote these, so they
-  are not at risk of being tuned — consciously or not — against this
-  system's own detection logic. **This is the citable, non-circular
-  comparison.**
+* **``external_dataset``** (43 scenarios) — ChatGPT-3.5 outputs (paraphrase,
+  rewrite, open-ended, "information manipulation" of real true articles, and
+  a small fully-fabricated set) on real human-written articles, drawn
+  (fixed random seed, stratified by domain and generation method, no
+  cherry-picking) from Chen & Shu's LLMFake dataset (ICLR 2024,
+  github.com/llm-misinformation/llm-misinformation), PolitiFact/GossipCop
+  subset. Every candidate was individually read before inclusion: roughly
+  half of the raw, automatically-filtered draws turned out to be real
+  transcripts, true statements that survived the "text changed" filter,
+  debunking/correction text, or model refusals, and were discarded on
+  manual review rather than counted. Nobody on this project *wrote* the
+  ones that remain, so they are not at risk of being tuned — consciously or
+  not — against this system's own detection logic. **This is the citable,
+  non-circular comparison.**
 * **``hand_authored``** (8 scenarios) — written for this benchmark to avoid
   overt disinformation tropes. Still useful as a data point, but cannot rule
   out the circularity risk above, so it is disclosed as exploratory rather
@@ -22,26 +28,34 @@ Measured recall (the hoax "catch rate"):
 * ``human_typical`` (23 scenarios, all hand-authored but modeled on
   well-documented real hoaxes): **100%**, zero false negatives. The original,
   non-negotiable guarantee — still holds.
-* ``ai_fluent`` / ``external_dataset``: **61.1%** (11/18) — a real, wider gap
-  than a first, smaller (n=6) sample suggested (83.3%). Growing the sample
-  made the measured gap *wider*, not narrower, which is itself informative:
-  it means the first pass, while not circular, had gotten lucky with an
-  easier-than-typical draw.
+* ``ai_fluent`` / ``external_dataset``: **74.4%** (32/43). History of this
+  number as the sample grew: n=6 -> 83.3%, n=18 -> 61.1%, n=43 -> 74.4%. The
+  gap first widened, then narrowed — evidence that recall on any single
+  small subgroup is noisy, not that either earlier reading was wrong. The
+  two mature, unchanged-since-n=18 buckets remain the most trustworthy
+  individually: **75.0%** for paraphrase-generated text vs. **33.3%** for
+  rewrite-generated text. Newer buckets added at n=43
+  (open_ended_generation, six information_manipulation sub-strategies,
+  hallucination/partially_arbitrary_generation) are each n<=10 and tracked
+  in ``by_generation_method``, but not yet individually trustworthy.
 * ``ai_fluent`` / ``hand_authored``: **50.0%** (4/8) — lower, but carries the
   circularity caveat above.
-* Within ``external_dataset``, recall further splits by *how* ChatGPT-3.5 was
-  prompted: **75.0%** for paraphrase-generated text vs. **33.3%** for
-  rewrite-generated text (see ``by_generation_method``) — evidence that the
-  generation method itself, not just the source dataset, matters.
+* The ``information_manipulation`` sub-strategies also fixed a real gap in
+  the benchmark's design: every ``external_dataset`` item before n=43 was
+  "long" (article-length), while every short, single-claim item was
+  ``hand_authored`` — meaning length and provenance were fully confounded.
+  ``information_manipulation`` (which distorts real TRUE articles into
+  short, single-claim misinformation) supplied the first genuinely short
+  ``external_dataset`` items, decoupling the two.
 
 An earlier version of this benchmark used only hand-authored ai_fluent
 scenarios and measured a much starker gap (28.6% recall, and a reversed
 length effect where long articles scored worse). Replacing the long-form
-half with real, independently-sourced text (first n=6, later grown to n=18)
-first narrowed that gap, then widened it again as the sample grew — evidence
-that circularity was real, but so is sampling variance at small n. This is
-exactly why the ``external_dataset`` cohort, not the blended number, is the
-one to trust and cite, and why it is worth growing further.
+half with real, independently-sourced text (n=6, then 18, then 43) first
+narrowed that gap, then widened it, then narrowed it again as the sample
+grew — evidence that circularity was real, but so is sampling variance at
+small n. This is exactly why the ``external_dataset`` cohort, not the
+blended number, is the one to trust and cite.
 
 Re-run ``python -m src.evaluate --adversarial`` to refresh the results file.
 """
@@ -117,11 +131,14 @@ def test_length_and_style_breakdowns_are_present():
 
 def test_generation_method_recall_does_not_regress():
     # Robustness check on the external_dataset headline: is the effect
-    # specific to one prompting method? Measured: paraphrase 75.0%, rewrite
-    # 33.3% — both tracked so a future change can't silently regress either,
-    # without asserting the (small, n=6-12) subgroup numbers as targets.
+    # specific to one prompting method? Most buckets are too small (n<=10)
+    # for their own dedicated floor, so every bucket present is held to the
+    # shared hand_authored floor as a minimum — loose enough not to be
+    # brittle at small n, still enough to catch a real collapse.
     _, _, _, _, by_generation_method, _ = _load()
     for method in ("paraphrase_generation", "rewrite_generation"):
-        bucket = by_generation_method.get(method)
-        assert bucket is not None, f"expected a '{method}' bucket"
-        assert bucket["recall_fake"] >= config.AI_FLUENT_RECALL_FLOOR_HAND_AUTHORED
+        assert method in by_generation_method, f"expected a '{method}' bucket"
+    for method, bucket in by_generation_method.items():
+        assert bucket["recall_fake"] >= config.AI_FLUENT_RECALL_FLOOR_HAND_AUTHORED, (
+            f"{method} recall {bucket['recall_fake']:.1%} fell below the shared floor"
+        )

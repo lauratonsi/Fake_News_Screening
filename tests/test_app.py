@@ -66,7 +66,7 @@ def test_sidebar_limitations_discloses_the_ai_fluent_gap():
     at = _fresh_app()
     sidebar_text = " ".join(m.value for m in at.sidebar.markdown)
     assert "AI-generated disinformation" in sidebar_text
-    assert "73.7%" in sidebar_text  # current measured out-of-domain accuracy
+    assert "76.2%" in sidebar_text  # current measured out-of-domain accuracy
 
 
 def test_analyzing_a_hoax_shows_a_fake_verdict_and_model_scores():

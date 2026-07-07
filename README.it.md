@@ -13,18 +13,19 @@ Streamlit**.
 Demo live: https://fake-news-screening.streamlit.app/
 
 > **Il dato onesto:** l'ensemble ottiene **94,6%** su un test set in-domain
-> senza leakage e **73,7%** su 76 scenari adversarial fuori dominio, che
+> senza leakage e **76,2%** su 101 scenari adversarial fuori dominio, che
 > spaziano tra claim brevi e articoli lunghi, sei domini tematici e due *stili*
 > di disinformazione. Contro la disinformazione classica in stile umano
 > (deals segreti, memo trapelati, whistleblower) tiene **zero falsi
 > negativi** — nessuna bufala di questo tipo passa mai. Contro un testo
-> fluente e attribuito a una fonte senza quei tropi, testato su 18 vere
-> riscritture e parafrasi ChatGPT-3.5 di disinformazione documentata (non
-> scritte da questo progetto — vedi sotto il perché conta), il recall scende
-> al **61%** — un divario reale e moderato che si è *allargato*, non
-> ristretto, man mano che il campione cresceva da 6 a 18, l'opposto di quanto
-> suggeriva un primo passaggio più piccolo. Quell'evoluzione, non un singolo
-> numero, è il dato onesto: vedi *"La disinformazione generata
+> fluente e attribuito a una fonte senza quei tropi, testato su 43 vere
+> uscite ChatGPT-3.5 su disinformazione documentata (non scritte da questo
+> progetto — vedi sotto il perché conta, e quanti candidati grezzi sono
+> stati scartati dopo revisione manuale prima di arrivare a quel numero), il
+> recall è al **74%** — un divario reale e moderato che si è mosso man mano
+> che il campione cresceva (83% a n=6, 61% a n=18, 74% a n=43): si è
+> allargato, poi si è ristretto, ed è proprio questo il dato onesto, non un
+> singolo numero della sequenza. Vedi *"La disinformazione generata
 > dall'IA è più difficile da individuare"* più sotto. Il layer di retrieval
 > serve a *trovare* i claim veri/falsi noti più simili, non ad affermare la
 > verità partendo da una vicinanza tematica — vedi *"Due usi molto diversi
@@ -156,8 +157,8 @@ errore è un falso positivo sicuro su un claim breve *vero*).
     su 17 delle 23 bufale in stile classico ma su nessuna delle affermazioni
     vere che i modelli sovra-segnalano — e alza il flag di revisione senza mai
     cambiare il label. Condivide però gran parte del punto cieco del
-    classificatore sulle bufale fluenti in stile IA (7 su 18 reali segnalate,
-    0 su 8 scritte a mano): vedi sotto. ([`src/manipulation.py`](src/manipulation.py))
+    classificatore sulle bufale fluenti in stile IA (20 su 43 reali segnalate,
+    3 su 8 scritte a mano): vedi sotto. ([`src/manipulation.py`](src/manipulation.py))
 11. **Explainability e un feedback loop chiuso davvero** — la SVM è
     lineare, quindi il suo punteggio si scompone esattamente in contributi
     per-token (TF-IDF × coefficiente); la demo mostra le parole che spingono
@@ -175,7 +176,7 @@ errore è un falso positivo sicuro su un claim breve *vero*).
 
 Il benchmark fuori dominio resta offline e riproducibile (nessuna chiamata
 live), così questi livelli migliorano il comportamento reale senza gonfiare
-il 73,7% misurato. Un test di regressione
+il 76,2% misurato. Un test di regressione
 ([`tests/test_benchmark_invariants.py`](tests/test_benchmark_invariants.py))
 verifica la garanzia che regge davvero — **zero falsi negativi sulla
 disinformazione in stile classico** — e una soglia minima di accuratezza
@@ -191,13 +192,13 @@ riconoscerla?** La sezione documenta anche una correzione metodologica fatta a
 metà progetto — il risultato è diventato più debole, e più affidabile, dopo
 aver corretto un difetto in come era stato misurato la prima volta.
 
-Il benchmark a 76 scenari etichetta ogni claim fabbricato con uno `style`:
+Il benchmark a 101 scenari etichetta ogni claim fabbricato con uno `style`:
 
 - **`human_typical`** (23 scenari) — i tropi classici della disinformazione:
   *accordi segreti*, *un memo trapelato*, *secondo un whistleblower*, *fonti
   anonime*. È il registro di cui sono pieni i corpora di addestramento
   (ISOT/WELFake, in gran parte scritti da umani, pre-2021).
-- **`ai_fluent`** (26 scenari) — lo stesso tipo di claim fabbricato, scritto
+- **`ai_fluent`** (51 scenari) — lo stesso tipo di claim fabbricato, scritto
   come prosa fluente, calma, attribuita a una fonte, senza nessuno di quei
   tropi: un'istituzione dal nome plausibile, una statistica specifica, una
   cautela metodologica — il registro che un LLM moderno produce di default
@@ -211,10 +212,9 @@ conosceva esattamente cosa cerca il detector di tecniche di manipolazione di
 questo stesso sistema. Questo è circolare: misura se una difesa può essere
 elusa da qualcuno che già sa come funziona, non se la disinformazione
 *effettivamente prodotta* da un LLM la elude. Per correggere questo, gli
-scenari lunghi scritti a mano sono stati sostituiti, e in seguito integrati,
-con vera disinformazione generata da ChatGPT-3.5 — parafrasi e riscritture di
-bufale documentate e scritte da umani, pescate (seed casuale fisso,
-stratificato per dominio e metodo di generazione, nessuna selezione mirata)
+scenari lunghi scritti a mano sono stati sostituiti con vera disinformazione
+generata da ChatGPT-3.5, pescata (seed casuale fisso, stratificato per
+dominio e metodo di generazione, nessuna selezione mirata *sul risultato*)
 dal **dataset LLMFake** di Chen & Shu
 ([ICLR 2024](https://github.com/llm-misinformation/llm-misinformation), il
 cui stesso risultato è che "la disinformazione generata da LLM può essere più
@@ -223,60 +223,84 @@ scritta da umani con la stessa semantica"). Prima di usarlo, il suo
 sotto-corpus CoAID è stato controllato e scartato: un controllo di
 sovrapposizione testuale ha trovato che filtra nei nostri stessi dati di
 training COVID-19, il che lo avrebbe reso un test di leakage, non un test
-adversarial. Questo campione `external_dataset` è cresciuto da 6 a **18**
-scenari, pescati sia da PolitiFact sia da GossipCop su due metodi di
-generazione. Gli 8 scenari `ai_fluent` brevi restano scritti a mano — non
-esiste un corpus pubblico pulito di disinformazione *breve* parafrasata da
-LLM (CoAID sarebbe stato il candidato, ed è esattamente quello che è dovuto
-essere escluso) — e restano nel benchmark come dato esplorativo dichiarato,
-non come titolo.
+adversarial.
+
+Questo campione `external_dataset` è cresciuto tre volte — 6, poi 18, ora
+**43** scenari — aggiungendo ogni volta metodi di generazione, non solo
+volume: parafrasi e riscrittura di disinformazione reale (i due originali),
+generazione open-ended, sei sotto-strategie `information_manipulation` che
+distorcono articoli PolitiFact realmente **veri** trasformandoli in
+disinformazione, e un piccolo gruppo
+`hallucination`/`partially_arbitrary_generation` fabbricato da un prompt
+senza nessun articolo seed (quest'ultimo gruppo ha anche aggiunto un dominio
+`science` al campione esterno). Ogni candidato che superava i filtri
+automatici (il testo generato differisce dall'originale, rispetta un limite
+di lunghezza) è stato poi **letto individualmente prima dell'inclusione** —
+questo ha scartato circa metà dei candidati: trascrizioni storiche reali (un
+discorso di Obama del 2008 riportato alla lettera), affermazioni vere che
+per puro caso differivano testualmente dall'originale, testo di
+debunking/correzione, e un paio di rifiuti espliciti del modello. Nessuno di
+questi conta nei 43; solo i claim che affermano davvero qualcosa di falso
+sono stati inclusi. Gli 8 scenari `ai_fluent` brevi restano scritti a mano
+per un motivo che oggi non vale più per la crescita futura ma non valeva per
+questo passaggio: non esisteva un corpus di disinformazione breve generata
+da LLM finché `information_manipulation` non è stato identificato a metà
+progetto (vedi sotto) — restano nel benchmark come dato esplorativo
+dichiarato, non come titolo.
 
 Recall misurato (il "tasso di cattura" delle bufale),
 `python -m src.evaluate --adversarial`:
 
 | Stile / provenienza | n | Recall (tasso di cattura) | Layer di manipolazione segnala |
 |---|---|---|---|
-| `human_typical` (scritto a mano) | 23 | **100%** (0 mancate) | 17/23 (74%) |
-| `ai_fluent` / **`external_dataset`** (reale, non scritto da questo progetto) | 18 | **61,1%** (7 mancate) | 7/18 (39%) |
-| `ai_fluent` / `hand_authored` (esplorativo, con la riserva di circolarità sopra) | 8 | 50,0% (4 mancate) | 0/8 (0%) |
+| `human_typical` (scritto a mano) | 23 | **100%** (0 mancate) | 3/23 (13%) |
+| `ai_fluent` / **`external_dataset`** (reale, non scritto da questo progetto) | 43 | **74,4%** (32/43) | 20/43 (47%) |
+| `ai_fluent` / `hand_authored` (esplorativo, con la riserva di circolarità sopra) | 8 | 50,0% (4 mancate) | 3/8 (38%) |
 
 All'interno di `external_dataset`, il recall si scompone ulteriormente per
-**come** ChatGPT-3.5 è stato istruito a produrre la disinformazione:
+**come** ChatGPT-3.5 ha prodotto la disinformazione. Solo i due gruppi
+presenti già a n=18 sono abbastanza grandi (n=12, n=6) da leggersi come
+qualcosa di più del rumore; tutto ciò che è stato aggiunto a n=43 ha n≤10 ed
+è tracciato, non ancora affidabile singolarmente:
 
 | Metodo di generazione | n | Recall (tasso di cattura) |
 |---|---|---|
 | Parafrasi della bufala originale | 12 | **75,0%** |
 | Riscrittura completa della bufala originale | 6 | **33,3%** |
+| Generazione open-ended (stessi articoli seed) | 10 | 90,0% |
+| `information_manipulation` (6 sotto-strategie, aggregate) | 12 | 75,0% |
+| `hallucination` / `partially_arbitrary_generation` (senza articolo seed) | 4 | 75,0% |
 
-Una riscrittura lascia al modello più libertà di ristrutturare il testo di
-quanta ne dia una parafrasi, e l'effetto misurato è ampio — un secondo asse,
-osservato indipendentemente dal dataset sorgente, su cui *come* un LLM viene
-istruito cambia la rilevabilità, che merita ulteriori indagini prima di
-trattare uno dei due numeri come stabile.
+Una riscrittura lascia ancora al modello molta più libertà di ristrutturare
+il testo di quanta ne dia una parafrasi, e quel divario specifico (75,0%
+contro 33,3%) è l'unico asse di questa tabella abbastanza vecchio da
+fidarsene. I nuovi gruppi sono direzionalmente interessanti —
+`information_manipulation`, che distorce articoli realmente veri invece di
+riformulare bufale già esistenti, ha ottenuto un recall alto quanto la
+parafrasi — ma ciascuno è ancora troppo piccolo per generalizzare.
 
-**Il risultato citabile è la riga centrale della prima tabella.** Poiché
-tutti i 18 scenari `external_dataset` ricadono negli stessi due domini
-(politica, intrattenimento/misto) del gruppo di confronto, non serve nemmeno
-restringere per dominio: `human_typical` ottiene 100% (13/13) contro
-`ai_fluent`/`external_dataset` al 61,1% (11/18) — un divario reale, non
-circolare, di circa 39 punti. La riga in basso è un'evidenza più debole:
-direzionalmente coerente, ma la costruzione a mano non può escludere di
-essere stata implicitamente calibrata contro la logica di rilevamento di
-questo stesso sistema.
+**Il risultato citabile è la riga centrale della prima tabella.**
+`human_typical` ottiene 100% (23/23) contro `ai_fluent`/`external_dataset`
+al 74,4% (32/43) — un divario reale, non circolare, di circa 26 punti. La
+riga in basso è un'evidenza più debole: direzionalmente coerente, ma la
+costruzione a mano non può escludere di essere stata implicitamente
+calibrata contro la logica di rilevamento di questo stesso sistema.
 
-**Un risultato che si è rafforzato, non indebolito, man mano che il campione
-cresceva — ed è proprio questo il punto.** Il primo passaggio su
-`external_dataset` (n=6) misurava un recall dell'83,3%, un divario di circa
-17 punti rispetto alla disinformazione in stile classico. Espandere il
-campione a 18 — aggiungendo diversità tematica e un secondo metodo di
-generazione — ha allargato il divario misurato a circa 39 punti, non
-ristretto. In altre parole: correggere il problema di circolarità nella
-prima versione di questo benchmark era necessario ma non sufficiente da
-solo; il campione corretto ma piccolo era, col senno di poi, *anche* un'
-estrazione più facile del tipico. Entrambi i fatti sono dichiarati qui
-invece del solo numero più recente, perché chi deve decidere quanto fidarsi
-di questo benchmark ha bisogno di vedere che si è spostato, non solo dove è
-atterrato.
+**Un risultato che si è allargato, poi ristretto, man mano che il campione
+cresceva — ed è proprio questo il punto.** Il recall su `external_dataset`
+misurava 83,3% a n=6, 61,1% a n=18, e ora 74,4% a n=43. Letti tutti e tre
+insieme invece di sceglierne uno: il recall su un singolo sottogruppo
+piccolo è rumoroso — il campione a n=6 era un'estrazione più facile del
+tipico, quello a n=18 (ancora solo due metodi di generazione) era più
+difficile del tipico, e n=43 si colloca tra i due con più metodi di
+generazione rappresentati. I due sottogruppi abbastanza vecchi da essere
+stati misurati sia a n=18 sia a n=43 (parafrasi, riscrittura) non si sono
+mossi affatto (75,0% / 33,3%, invariati) — il che è di per sé informativo:
+ciò che si è mosso è la *composizione* del campione, non il comportamento
+di fondo di quei due metodi. Questo è dichiarato qui invece di essere
+compresso nell'ultima cifra, perché chi deve decidere quanto fidarsi di
+questo benchmark ha bisogno di vedere che si è spostato due volte, non solo
+dove è atterrato l'ultima volta.
 
 **Una ritrattazione, nell'interesse della stessa onestà che questo README
 chiede al sistema.** Una versione precedente di questa sezione affermava
@@ -285,33 +309,33 @@ dell'input: a n=6, sostituire ogni scenario lungo scritto a mano con dati
 reali esterni aveva fatto passare l'accuratezza sugli scenari lunghi dal
 56,2% (peggiore dei brevi) all'87,5% (migliore dei brevi), letto come prova
 che il presunto "effetto lunghezza" originale fosse puramente un artefatto
-della scrittura a mano avversariale. Con il campione ora cresciuto a 28
-scenari lunghi, il quadro è più calmo di entrambi gli estremi:
-**71,4% sui lunghi contro 75,0% sui brevi** — abbastanza vicini da far
-pensare che la lunghezza non sia un fattore indipendente di rilevabilità in
-nessuna delle due direzioni. La lezione non è solo "la prima misurazione era
-circolare" ma "anche una correzione successiva misurata su n=6 resta un
-campione piccolo" — sia l'errore originale di questo progetto sia la sua
-prima correzione erano più sicuri di quanto i dati disponibili in quel
-momento giustificassero davvero.
+della scrittura a mano avversariale. Nemmeno quella lettura ha retto: a n=18
+si era già calmata a una quasi-parità (71,4% contro 75,0%), e a n=43 — ora
+con veri scenari brevi in `external_dataset` per la prima volta, non solo
+scritti a mano — il recall sui FAKE per lunghezza è **75,0% sui lunghi
+contro 84,2% sui brevi**, ancora nessun segno che la lunghezza sia un
+fattore indipendente di rilevabilità in nessuna delle due direzioni. La
+lezione non è solo "la prima misurazione era circolare" ma "anche una
+correzione successiva misurata su n=6 resta un campione piccolo" — sia
+l'errore originale di questo progetto sia la sua prima correzione erano più
+sicuri di quanto i dati disponibili in quel momento giustificassero davvero.
 
 **Cosa significa, e cosa non significa, per le garanzie del sistema.** La
 garanzia di zero falsi negativi ripetuta in tutto questo README è reale, ma
 ora è esplicitamente delimitata: regge per la disinformazione scritta nel modo
 in cui è stata storicamente scritta la disinformazione documentata. Contro la
-fabbricazione fluente parafrasata o riscritta da IA regge decisamente meno
-bene — un divario reale, da moderato a sostanziale (100% contro 61,1% su
-dati sorgente indipendenti), non il punto cieco quasi totale suggerito da una
-misurazione precedente, metodologicamente circolare, ma nemmeno il divario
-lieve che un campione più piccolo e già corretto aveva inizialmente
-suggerito. Coerentemente con la sezione *Motivazione* sopra, questo non è un
-fallimento del design del sistema ma la sua conferma: uno **strumento di
-screening dentro un processo umano**, non un arbitro automatico. Il passo
-onesto successivo — non ancora implementato — sarebbe espandere ulteriormente
-il campione `external_dataset` (es. i restanti metodi di generazione dello
-stesso dataset LLMFake, o le sue varianti Llama2/Vicuna) e, separatamente,
-indagare perché il testo riscritto elude il rilevamento più di quello
-parafrasato.
+fabbricazione fluente generata da IA regge decisamente meno bene — un
+divario reale e moderato (100% contro 74,4% su dati sorgente indipendenti)
+— ma la dimensione esatta di quel divario si è già spostata due volte con
+il campione, quindi va letta come "sostanziale e reale", non come un numero
+preciso e stabile. Coerentemente con la sezione *Motivazione* sopra, questo
+non è un fallimento del design del sistema ma la sua conferma: uno
+**strumento di screening dentro un processo umano**, non un arbitro
+automatico. Il passo onesto successivo — non ancora implementato — sarebbe
+far crescere oltre n=10 ciascuno i gruppi per metodo di generazione ancora
+piccoli (`information_manipulation`, `open_ended_generation`,
+`hallucination`) e, separatamente, indagare perché il testo riscritto elude
+il rilevamento più di quello parafrasato.
 
 ## Pipeline e figure
 
@@ -349,38 +373,41 @@ flowchart LR
 | Bi-LSTM | 92,9% | 94,1% | 89,9% | 92,0% |
 | **Ensemble (media)** | **94,6%** | 94,5% | 93,3% | 93,9% |
 
-**Fuori dominio** — 76 scenari adversarial (hoax plausibili, verità scomode —
+**Fuori dominio** — 101 scenari adversarial (hoax plausibili, verità scomode —
 claim brevi e articoli lunghi, sei domini, due stili di disinformazione),
 `python -m src.evaluate --adversarial` →
 [`benchmarks/adversarial_results.json`](benchmarks/adversarial_results.json):
 
 | Dominio | Accuratezza | Falsi positivi | Falsi negativi | Segnalati per revisione |
 |---|---|---|---|---|
-| Politica | 68,2% | 3 | 4 | 8 |
+| Politica | 77,5% | 3 | 6 | 14 |
 | COVID | 84,6% | 1 | 1 | 4 |
-| Misto | 72,7% | 3 | 3 | 9 |
+| Misto | 73,1% | 3 | 4 | 12 |
 | Economia | 71,4% | 1 | 1 | 3 |
-| Scienza | 66,7% | 0 | 2 | 2 |
+| Scienza | 66,7% | 0 | 3 | 3 |
 | Tecnologia | 83,3% | 1 | 0 | 2 |
-| **Totale** | **73,7%** | 9 | 11 | 28 |
+| **Totale** | **76,2%** | 9 | 15 | 38 |
 
-Per **lunghezza** — claim brevi vs. scenari lunghi in formato articolo:
+Per **lunghezza** — claim brevi vs. scenari lunghi in formato articolo
+(recall sugli item FAKE, non accuratezza complessiva — vedi la ritrattazione
+sotto per il perché è questo il numero che conta qui):
 
-| Lunghezza | n | Accuratezza |
+| Lunghezza | n | Recall FAKE (tasso di cattura) |
 |---|---|---|
-| Breve | 48 | 75,0% |
-| Lunga | 28 | 71,4% |
+| Breve | 59 | 84,2% |
+| Lunga | 42 | 75,0% |
 
-*(Questa tabella si è spostata due volte. A n=16 scenari lunghi, tutti
+*(Questa tabella si è spostata tre volte. A n=16 scenari lunghi, tutti
 scritti a mano, i lunghi ottenevano un'accuratezza molto peggiore (56,2%) —
 letta all'epoca come una seconda conferma indipendente dell'effetto della
 fluenza IA. Sostituire quei 6 con dati reali esterni l'aveva ribaltata
 all'87,5% — i lunghi ora *migliori* dei brevi — il che mostrava che la
 prima lettura era un artefatto della scrittura a mano, non una proprietà
-della lunghezza. Espandendo ulteriormente il campione lungo, a 28 scenari
-dominati da dati reali, il quadro si assesta più vicino alla parità:
-**71,4% contro 75,0%**, un divario abbastanza piccolo da far pensare che la
-lunghezza non sia un fattore indipendente di rilevabilità. Vedi la
+della lunghezza. A n=28 scenari lunghi si era assestata quasi alla parità
+(71,4% contro 75,0%). Ora, a n=42 lunghi / 59 brevi — con veri scenari
+brevi in `external_dataset` per la prima volta, non solo scritti a mano —
+si legge **75,0% sui lunghi contro 84,2% sui brevi**: ancora nessun segno
+che la lunghezza sia un fattore indipendente di rilevabilità. Vedi la
 ritrattazione nella sezione *"La disinformazione generata dall'IA è più
 difficile da individuare"* sopra per cosa ha insegnato davvero ciascuna
 oscillazione.)*
@@ -391,14 +418,14 @@ che conta di più per uno strumento anti-disinformazione:
 | Stile | n | Recall (tasso di cattura) |
 |---|---|---|
 | `human_typical` (tropi classici) | 23 | **100,0%** |
-| `ai_fluent` (stile IA, fluente — media aggregata, vedi sopra) | 26 | 57,7% |
+| `ai_fluent` (stile IA, fluente — media aggregata, vedi sopra) | 51 | 70,6% |
 
 `ai_fluent` mescola due provenienze con un peso probatorio molto diverso —
 vedi *"La disinformazione generata dall'IA è più difficile da individuare"*
-sopra per la scomposizione citabile e non circolare (61,1% sui dati reali
-esterni, n=18, contro 50,0% sul testo scritto a mano, n=8) e per l'ulteriore
+sopra per la scomposizione citabile e non circolare (74,4% sui dati reali
+esterni, n=43, contro 50,0% sul testo scritto a mano, n=8) e per l'ulteriore
 scomposizione per metodo di generazione (parafrasi 75,0% contro riscrittura
-33,3%).
+33,3%, più i gruppi più nuovi e più piccoli).
 
 I falsi positivi ripetono il risultato originale — un **falso positivo su
 un'affermazione vera** ("Donald Trump ha vinto le elezioni del 2016…" →
@@ -445,7 +472,7 @@ più un classificatore lineare calibrato, addestrato e valutato sullo
 | Embeddings MiniLM + classificatore lineare | 88,5% | 60% |
 
 *Fotografia storica, congelata per comparabilità: misurata sul benchmark
-originale a 30 scenari, prima che fosse espanso (prima a 64, ora 76,
+originale a 30 scenari, prima che fosse espanso (prima a 64, poi 76, ora 101,
 aggiungendo nuovi domini, articoli lunghi e la suddivisione di stile
 human-typical/ai-fluent — vedi "La disinformazione generata dall'IA è più
 difficile da individuare"
@@ -535,7 +562,7 @@ screening dentro un processo umano**, non un arbitro automatico della verità.
 
 Il benchmark adversarial versionato segue la stessa logica che la
 letteratura sulla sicurezza cognitiva applica alle istituzioni — *non puoi
-difendere ciò che non hai testato*: i 76 scenari restano nel repository come
+difendere ciò che non hai testato*: i 101 scenari restano nel repository come
 uno stress test permanente e ripetibile, non un esperimento occasionale.
 
 ## Struttura del repository
@@ -681,19 +708,20 @@ Fact Check viene saltato e Wikipedia è la fonte live di default.
   (`REF_OVERRIDE_THRESHOLD = 0,90`).
 - Le RNN sono addestrate su un sottocampione di 5.000 articoli (budget CPU);
   la SVM vede l'intero training set.
-- L'accuratezza fuori dominio (73,7% complessivo) è il numero che conta per
+- L'accuratezza fuori dominio (76,2% complessivo) è il numero che conta per
   un uso reale, ed è il motivo per cui qualunque deploy di un sistema come
   questo richiede un essere umano nel ciclo.
 - **La disinformazione fluente in stile IA è un punto debole misurato e
   sostanziale, non teorico.** Il recall sulle bufale in stile classico è
-  100%; su 18 vere parafrasi e riscritture ChatGPT-3.5 di disinformazione
-  documentata, sorgente indipendente, scende al 61,1% (vedi *"La
-  disinformazione generata dall'IA è più difficile da individuare"* sopra) —
-  e ancora più in basso (33,3%) sul sotto-campione riscritto anziché
-  parafrasato. Sia il classificatore sia il layer delle tecniche di
-  manipolazione si agganciano in parte a caratteristiche di superficie di
-  *come gli umani hanno storicamente scritto* la disinformazione, e nessuno
-  dei due sostituisce del tutto quel segnale quando è assente. Questo
-  divario si è allargato, non ristretto, man mano che la base di prove
-  cresceva da 6 a 18 esempi reali — un promemoria che anche un campione
-  corretto ma piccolo può sottostimare un problema.
+  100%; su 43 vere uscite ChatGPT-3.5 su disinformazione documentata,
+  sorgente indipendente, scende al 74,4% (vedi *"La disinformazione generata
+  dall'IA è più difficile da individuare"* sopra) — e ancora più in basso
+  (33,3%) sul sotto-campione riscritto anziché parafrasato. Sia il
+  classificatore sia il layer delle tecniche di manipolazione si agganciano
+  in parte a caratteristiche di superficie di *come gli umani hanno
+  storicamente scritto* la disinformazione, e nessuno dei due sostituisce
+  del tutto quel segnale quando è assente. Questo divario si è già mosso due
+  volte con il campione (83,3% a n=6, 61,1% a n=18, 74,4% a n=43) — un
+  promemoria che il recall misurato su una singola dimensione campionaria,
+  non solo su un campione piccolo, può fraintendere la reale entità di un
+  problema.
