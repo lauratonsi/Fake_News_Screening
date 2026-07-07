@@ -88,12 +88,12 @@ with st.sidebar:
   everything else is out of domain past that window.
 - Reference-corpus matching is **semantic similarity, not verification** —
   it cannot confirm a claim it has never seen in any wording.
-- Out-of-domain accuracy is **78.1%** (vs. 94.6% in-domain) on a 64-scenario
+- Out-of-domain accuracy is **73.7%** (vs. 94.6% in-domain) on a 76-scenario
   adversarial benchmark — see the README for the full breakdown.
 - **Fluent, AI-generated disinformation is measurably harder to catch than
-  classic-style hoaxes**: 100% vs. ~83% recall on real, independently-sourced
-  test data (see the README's *"AI-generated disinformation is harder to
-  detect"*). Treat every result as a screening aid, not a truth oracle —
+  classic-style hoaxes**: 100% vs. ~61% recall on 18 real, independently-
+  sourced test cases (see the README's *"AI-generated disinformation is
+  harder to detect"*). Treat every result as a screening aid, not a truth oracle —
   especially on calm, well-sourced-sounding claims.
         """
     )
@@ -135,6 +135,19 @@ if st.button("Analyze", type="primary") and text.strip():
             "again in a few seconds."
         )
         st.stop()
+
+    # Persist across reruns: st.button() is only True in the exact run it was
+    # clicked in, but the feedback form below triggers its own reruns (typing
+    # a comment, picking a label, submitting). Without session_state, any of
+    # those would make `st.button("Analyze")` re-evaluate to False and the
+    # entire result panel — including the feedback form itself — would
+    # vanish before the submission could be recorded.
+    st.session_state["result"] = result
+    st.session_state["analyzed_text"] = text
+
+if "result" in st.session_state:
+    result = st.session_state["result"]
+    analyzed_text = st.session_state["analyzed_text"]
 
     st.divider()
     confidence = result.get("confidence", "medium")
@@ -336,7 +349,7 @@ if st.button("Analyze", type="primary") and text.strip():
             elif correct_label.startswith("FAKE"):
                 label = "FAKE"
             record_feedback(
-                text,
+                analyzed_text,
                 result,
                 agrees=agree.startswith("👍"),
                 correct_label=label,
