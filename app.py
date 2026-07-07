@@ -41,8 +41,9 @@ def load_system():
 st.title("🛡️ Fake News Screening")
 st.markdown(
     "**Hybrid Disinformation Screening System (HDSS)** — a calibrated SVM, a "
-    "Bi-GRU and a Bi-LSTM vote on the input; a retrieval layer against the "
-    "training corpora adds evidence."
+    "Bi-GRU and a Bi-LSTM vote on the input; a live fact-check verdict (when "
+    "available) takes precedence, and reference retrieval, a manipulation-"
+    "technique detector and a confidence tier all add evidence around it."
 )
 
 with st.sidebar:
@@ -50,28 +51,50 @@ with st.sidebar:
     st.markdown(
         """
 1. **Ensemble** — three models trained on ISOT + WELFake + COVID-19
-   score the text; the average is the fake probability.
-2. **Most similar known articles** — the input is compared, by semantic
+   score the text; their average is the fake probability.
+2. **Live fact-check overrides the ensemble** — if a professional
+   fact-checker (Google Fact Check Tools) has already rated the claim, that
+   verdict wins: it's the only signal that is both authoritative and
+   *current*, so it can correct the models on events the 2015–2020 training
+   data never saw.
+3. **Most similar known articles** — the input is compared, by semantic
     embedding similarity, with snippets of known real/fake articles (so
     reworded claims still match). Matching a known *fake* claim is evidence
     of fakeness and boosts the score; matching real reporting is shown as
     evidence only, since sharing a topic with true news is not proof — it
     sways the verdict solely on a near-verbatim match.
-3. **Agreement check** — if the models disagree strongly, the verdict
-   is flagged for human review.
+4. **Manipulation-technique detection** — flags *how* the text tries to
+   persuade (appeal to hidden knowledge, unverifiable sources, fake
+   authority, urgency, us-vs-them), independent of whether the claim is
+   true. Naming the technique is *inoculation*, not a verdict.
+5. **Confidence tier** — every result is High/Medium/Low confidence. A
+   model-only call on a short, out-of-domain claim — where the models are
+   most often confidently wrong — is shown as a low-confidence *screening
+   signal to verify*, never a settled verdict. This only lowers confidence;
+   it never flips a FAKE label to REAL.
+6. **Explainability** — the SVM is linear, so its score breaks down into the
+   exact words pushing it toward FAKE or REAL.
+7. **Agreement check + feedback** — if the models disagree strongly, the
+   verdict is flagged for human review; a 👍/👎 form below lets you correct
+   the system, logged for future improvement.
         """
     )
     st.header("Limitations")
     st.markdown(
         """
 - English-language news only.
-- Training data covers 2015–2021: recent events are out of domain.
-- The reference lookup is **semantic similarity matching, not fact-checking** —
-    it cannot verify claims it has never seen (in any wording), but it now
-    returns the retrieved evidence.
-- Out-of-domain accuracy is substantially lower than in-domain
-  (see the README benchmark) — treat verdicts as a screening aid,
-  not a truth oracle.
+- The classifiers are trained on text from 2015–2020; live fact-check
+  (when a rating exists) is the only signal that reaches current events —
+  everything else is out of domain past that window.
+- Reference-corpus matching is **semantic similarity, not verification** —
+  it cannot confirm a claim it has never seen in any wording.
+- Out-of-domain accuracy is **78.1%** (vs. 94.6% in-domain) on a 64-scenario
+  adversarial benchmark — see the README for the full breakdown.
+- **Fluent, AI-generated disinformation is measurably harder to catch than
+  classic-style hoaxes**: 100% vs. ~83% recall on real, independently-sourced
+  test data (see the README's *"AI-generated disinformation is harder to
+  detect"*). Treat every result as a screening aid, not a truth oracle —
+  especially on calm, well-sourced-sounding claims.
         """
     )
 
