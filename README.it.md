@@ -729,3 +729,31 @@ Fact Check viene saltato e Wikipedia è la fonte live di default.
   promemoria che il recall misurato su una singola dimensione campionaria,
   non solo su un campione piccolo, può fraintendere la reale entità di un
   problema.
+
+## Direzioni future
+
+**Un'estensione per browser è il formato naturale successivo.** La parte più
+utile di questo sistema non è il verdetto FAKE/REAL — è il layer di prebunking
+che *nomina* la tecnica di manipolazione in atto. Quel valore arriva con più
+forza nel momento e nel luogo in cui una persona sta effettivamente leggendo
+un articolo, non su una demo separata in cui deve incollare il testo.
+Un'estensione elimina esattamente quell'attrito.
+
+L'architettura è già predisposta. `app.py` (UI) e `src/predict.py` (la logica
+di `ScreeningSystem`) sono separati in modo pulito, quindi esporre
+`ScreeningSystem.predict()` come endpoint REST è una modifica piccola, non una
+riscrittura. La suddivisione realistica è un **client leggero** (evidenzia il
+testo → chiama l'API) sopra un **backend ospitato** che esegue il sistema
+esistente: l'ensemble e lo stack di retrieval semantico da ~600 MB sono troppo
+pesanti per girare nel browser.
+
+Un dettaglio rende il fit migliore di quanto sembri: il rilevatore di tecniche
+di manipolazione (`src/manipulation.py`) è regex stdlib pura, quindi può
+essere portato in JavaScript e girare **interamente lato client, offline, a
+costo zero** — segnalando le tecniche di manipolazione inline senza alcuna
+chiamata al server, e riservando il backend al verdetto completo dell'ensemble
+solo su richiesta esplicita. Due aspetti andrebbero progettati con cura prima:
+la **privacy** (inviare il testo della pagina a un server dev'essere esplicito
+e opt-in — un modello "evidenzia-per-verificare", non una scansione silenziosa
+di ogni pagina) e l'**hosting del backend** (Streamlit Cloud non serve bene una
+REST API; servirebbe un piccolo host dedicato).

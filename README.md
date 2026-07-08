@@ -676,3 +676,29 @@ Fact Check is skipped and Wikipedia is the default live source.
   absent. This gap has moved with the sample twice already (83.3% at n=6,
   61.1% at n=18, 74.4% at n=43) — a reminder that recall on any one sample
   size, not just a small one, can misstate the size of a real problem.
+
+## Future directions
+
+**A browser extension is the natural next form factor.** The most useful part
+of this system is not the FAKE/REAL verdict — it is the prebunking layer that
+*names* the manipulation technique at work. That value lands hardest at the
+moment and place someone is actually reading an article, not on a separate
+demo they have to paste text into. An extension removes exactly that friction.
+
+The architecture is already positioned for it. `app.py` (UI) and
+`src/predict.py` (the `ScreeningSystem` logic) are cleanly separated, so
+exposing `ScreeningSystem.predict()` as a REST endpoint is a small change, not
+a rewrite. The realistic split is a **thin extension client** (highlight text
+→ call the API) over a **hosted backend** running the existing system — the
+ensemble and the ~600 MB semantic-retrieval stack are far too heavy to run
+in-browser.
+
+One detail makes the fit better than it first looks: the manipulation-technique
+detector (`src/manipulation.py`) is pure-stdlib regex, so it can be ported to
+JavaScript and run **entirely client-side, offline, at zero cost** — flagging
+manipulation techniques inline without any server call, and reserving the
+backend for the full ensemble verdict on explicit request. Two things would
+need deliberate design first: **privacy** (sending page text to a server must
+be explicit and opt-in — a highlight-to-check model, not silent scanning of
+every page) and **backend hosting** (Streamlit Cloud does not serve a REST API
+well; a small dedicated host would be needed).
