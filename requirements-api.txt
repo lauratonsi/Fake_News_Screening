@@ -1,0 +1,5 @@
+# Extra dependencies to run the JSON screening API (src/api.py). The deployed
+# Streamlit app does not need these; the API is a separate serving surface.
+-r requirements.txt
+fastapi==0.115.5
+uvicorn==0.32.1

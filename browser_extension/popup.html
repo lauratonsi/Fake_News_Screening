@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font: 13px system-ui, sans-serif; width: 320px; margin: 0; padding: 12px; }
+    textarea { width: 100%; height: 90px; box-sizing: border-box; }
+    button { margin-top: 8px; padding: 6px 12px; cursor: pointer; }
+    #out { margin-top: 10px; }
+    .verdict { font-weight: 700; font-size: 15px; }
+    .fake { color: #c0392b; } .real { color: #1e8449; }
+    .muted { color: #666; font-size: 12px; }
+    ul { margin: 6px 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <h3 style="margin:0 0 6px">Fake-News Screening</h3>
+  <p class="muted" style="margin:0 0 8px">A screening aid — a prompt for verification, not a verdict.</p>
+  <textarea id="text" placeholder="Paste an article or claim…"></textarea>
+  <button id="go">Screen text</button>
+  <div id="out"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

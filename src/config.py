@@ -181,6 +181,19 @@ AI_STYLE_REVIEW_MIN_MARKERS = 2      # at/above this, flag for review
 EXPLAIN_MAX_TOKENS = 40
 EXPLAIN_TOP_K = 8
 
+# --- Screening API (see src/api.py) ------------------------------------------
+# A thin JSON endpoint over ScreeningSystem.predict, so the screener can back a
+# browser extension / batch client, not only the Streamlit demo. The request
+# validation and response shaping are pure (testable without a server or the
+# models); only the FastAPI wrapper loads the system. A cap keeps a single
+# request bounded (the RNN occlusion is O(tokens)).
+API_MAX_TEXT_CHARS = 20_000
+API_MIN_TEXT_CHARS = 1
+# CORS origins allowed to call the API (a browser extension sends an Origin
+# header). "*" is fine for a public, unauthenticated screening aid; tighten to
+# your extension's id / your domain in production.
+API_ALLOWED_ORIGINS = ["*"]
+
 # --- Artifact locations --------------------------------------------------------
 SVM_FILE = MODELS_DIR / "svm_tfidf.joblib"
 GRU_FILE = MODELS_DIR / "gru.keras"

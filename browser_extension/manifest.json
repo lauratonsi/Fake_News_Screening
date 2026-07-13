@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Fake-News Screening",
+  "version": "1.0",
+  "description": "Screen selected text with the fake-news screening API. A prompt for verification, not a verdict.",
+  "permissions": ["contextMenus", "activeTab", "scripting", "notifications"],
+  "host_permissions": ["http://127.0.0.1:8000/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Fake-News Screening" }
+}
