@@ -195,6 +195,16 @@ REF_EMBEDDINGS_FILE = REFERENCE_DIR / "embeddings.npz"
 SCENARIOS_FILE = BENCHMARKS_DIR / "adversarial_scenarios.json"
 ADVERSARIAL_RESULTS_FILE = BENCHMARKS_DIR / "adversarial_results.json"
 
+# --- Red-team stress set (see src/redteam.py) --------------------------------
+# Deterministically generated adversaries live in a SEPARATE file, never in the
+# citable benchmark above: synthetic scenarios must never contaminate the
+# hand-authored / external_dataset numbers the README cites (the circularity the
+# project warns about). This bucket is exploratory — it grows coverage and
+# guards regressions, but its recall is reported on its own, tagged synthetic.
+REDTEAM_SCENARIOS_FILE = BENCHMARKS_DIR / "redteam_scenarios.json"
+REDTEAM_RESULTS_FILE = BENCHMARKS_DIR / "redteam_results.json"
+REDTEAM_SEED = 1234
+
 # --- Optional transformer ensemble member (experiments/transformer_finetune) --
 # OFF by default. A 4th ensemble vote from an end-to-end fine-tuned transformer
 # is added ONLY after the promotion gate (src/ensemble_gate.should_promote)
