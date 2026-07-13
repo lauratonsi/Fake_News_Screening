@@ -47,3 +47,32 @@ def test_empty_text_is_safe():
     assert result["count"] == 0
     assert result["techniques"] == []
     assert result["score"] == 0.0
+
+
+# --- Italian prebunking (language-aware) -------------------------------------
+
+def test_detects_italian_techniques_and_flags_high():
+    text = ("SCONVOLGENTE: un documento segreto trapelato rivela il vero motivo "
+            "che i poteri forti non vogliono che tu sappia. Condividi prima che "
+            "lo cancellino!")
+    result = detect_manipulation(text)  # language auto-detected as Italian
+    ids = _ids(result)
+    assert "conspiracy" in ids
+    assert "unverifiable_source" in ids
+    assert "urgency" in ids
+    assert "fear_emotion" in ids
+    assert result["high"] is True
+
+
+def test_italian_plain_true_claim_is_not_flagged():
+    text = "Il governo ha approvato la legge di bilancio dopo il voto del parlamento."
+    result = detect_manipulation(text)
+    assert result["count"] == 0
+    assert result["high"] is False
+
+
+def test_forced_language_selects_the_right_patterns():
+    # Italian phrasing but language forced to English -> English patterns miss it.
+    text = "gli scienziati confermano che il vaccino è sicuro"
+    assert detect_manipulation(text, lang="it")["count"] >= 1   # 'gli scienziati confermano'
+    assert detect_manipulation(text, lang="en")["count"] == 0   # no English pattern matches
