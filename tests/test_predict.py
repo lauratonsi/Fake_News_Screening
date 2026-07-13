@@ -128,6 +128,40 @@ def test_model_disagreement_is_low_confidence_regardless_of_length():
     assert result["needs_review"] is True
 
 
+# --- fluent fabricated-authority (ai_fluent) review signal ------------------
+
+HIGH_AI_STYLE = {"high": True, "count": 3, "score": 1.0}
+
+
+def test_ai_fluent_fabrication_routed_to_review_without_flipping_label():
+    # The ai_fluent failure mode: the ensemble waves a fluent fabrication
+    # through as REAL. The fabricated-authority signal must route it to a human
+    # (verify the cited source) — but never flip the label or change the score.
+    scores = {"svm": 0.20, "gru": 0.15, "lstm": 0.25}  # agree -> REAL
+    baseline = combine_verdict(scores, NO_REFERENCE, n_words=60)
+    flagged = combine_verdict(scores, NO_REFERENCE, n_words=60, ai_style=HIGH_AI_STYLE)
+    assert baseline["needs_review"] is False          # ensemble alone: silent miss
+    assert flagged["needs_review"] is True            # now surfaced for review
+    assert flagged["verdict"] == "REAL"               # label untouched (no censorship risk)
+    assert flagged["fake_probability"] == baseline["fake_probability"]  # score untouched
+    assert flagged["confidence"] == "low"             # not presented as settled
+
+
+def test_ai_style_high_never_flips_a_fake_verdict_off():
+    # Zero-false-negative guarantee: a real hoax stays FAKE regardless.
+    scores = {"svm": 0.9, "gru": 0.88, "lstm": 0.91}
+    result = combine_verdict(scores, NO_REFERENCE, n_words=200, ai_style=HIGH_AI_STYLE)
+    assert result["verdict"] == "FAKE"
+    assert result["needs_review"] is True
+
+
+def test_low_ai_style_does_not_trigger_review():
+    scores = {"svm": 0.20, "gru": 0.15, "lstm": 0.25}
+    result = combine_verdict(scores, NO_REFERENCE, n_words=60,
+                             ai_style={"high": False, "count": 1})
+    assert result["needs_review"] is False
+
+
 # --- live-verdict aggregation from claim analysis ---------------------------
 
 def test_aggregate_live_verdict_prioritises_fake():

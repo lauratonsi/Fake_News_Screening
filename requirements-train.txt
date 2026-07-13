@@ -5,3 +5,8 @@
 -r requirements.txt
 tensorflow==2.15.1
 tf-keras==2.15.1
+# For the fine-tuned-transformer experiment (experiments/transformer_finetune.py)
+# and the optional 4th ensemble member. torch is already in requirements.txt;
+# transformers is training-only until the promotion gate adopts the model, at
+# which point it also belongs in requirements.txt for runtime inference.
+transformers==4.46.3

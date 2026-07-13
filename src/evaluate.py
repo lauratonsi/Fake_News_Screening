@@ -49,7 +49,9 @@ def run_adversarial() -> None:
 
     results = []
     for case in scenarios:
-        pred = system.predict(case["text"])
+        # explain=False: the benchmark only reads the verdict, and the per-token
+        # RNN occlusion would add ~40 forward passes per scenario for nothing.
+        pred = system.predict(case["text"], explain=False)
         results.append(
             {
                 **case,

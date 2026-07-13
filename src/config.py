@@ -112,8 +112,26 @@ LIVE_KEYWORD_TERMS = 3
 # not a fact-checking archive: a historical claim with no retrospective
 # coverage will still correctly show "no live evidence".
 GDELT_TIMESPAN = "10y"
-GDELT_SOURCE_LANGUAGE = "english"  # the demo is English-only (see README)
-GOOGLE_FACTCHECK_LANGUAGE = "en"
+GDELT_SOURCE_LANGUAGE = "english"  # default; per-language routing uses GDELT_SOURCELANG
+GOOGLE_FACTCHECK_LANGUAGE = "en"   # default; per-language routing uses GOOGLE_FACTCHECK_LANG
+
+# --- Multilingual evidence routing (see src/language.py) ----------------------
+# The SVM/RNN classifiers are English-trained, but the *evidence* layer is not
+# language-bound: for an Italian claim we can query Italian Wikipedia, Italian
+# news (GDELT sourcelang) and Italian fact-checks (Google Fact Check
+# languageCode). detect_language() picks the language and these maps route each
+# source to it. Full Italian *classification* still needs an Italian-labelled
+# training set and a multilingual embedder (EMBEDDING_MODEL_MULTILINGUAL below);
+# that is out of scope here — this makes the retrieved evidence multilingual.
+SUPPORTED_LANGUAGES = ("en", "it")
+DEFAULT_LANGUAGE = "en"
+WIKIPEDIA_HOST = {"en": "en.wikipedia.org", "it": "it.wikipedia.org"}
+GDELT_SOURCELANG = {"en": "english", "it": "italian"}
+GOOGLE_FACTCHECK_LANG = {"en": "en", "it": "it"}
+# Swap EMBEDDING_MODEL_NAME to this to make reference retrieval cross-lingual
+# (requires re-encoding the corpus: python -m src.train). Not the default so the
+# committed English embeddings keep working unchanged.
+EMBEDDING_MODEL_MULTILINGUAL = "paraphrase-multilingual-MiniLM-L12-v2"
 
 # --- Ensemble -----------------------------------------------------------------
 # If the individual model scores span more than this, the system flags the
@@ -141,6 +159,28 @@ SHORT_INPUT_WORDS = 40
 MANIPULATION_TECHNIQUES_FOR_FULL_SCORE = 4  # this many distinct techniques -> score 1.0
 MANIPULATION_REVIEW_MIN_TECHNIQUES = 3      # at/above this, flag for review
 
+# --- Fluent fabricated-authority layer (the ai_fluent gap) -------------------
+# The companion to the manipulation layer for the OTHER hard register: fluent,
+# source-attributed prose that mimics legitimate reporting — a specific-sounding
+# study citation, a suspiciously precise dose/percentage, clinical-trial
+# vocabulary — with none of the classic disinformation tropes. This is exactly
+# where the article-trained ensemble and the trope-based manipulation layer are
+# both blind (see AI_FLUENT_RECALL_FLOOR_* below and src/ai_style.py). Like the
+# manipulation layer it NEVER flips the FAKE/REAL label: legitimate science
+# writing uses this register too, so it only surfaces as evidence and can raise
+# the human-review flag when several markers stack — turning a silent ai_fluent
+# miss into "a human should confirm the cited source exists".
+AI_STYLE_MARKERS_FOR_FULL_SCORE = 3  # this many distinct marker categories -> score 1.0
+AI_STYLE_REVIEW_MIN_MARKERS = 2      # at/above this, flag for review
+
+# --- Explainability -----------------------------------------------------------
+# The RNN half is explained by leave-one-out occlusion (see src/explain.py):
+# each token is removed and the neural sub-ensemble re-scored. That is one extra
+# forward pass per token, so cap how many leading tokens are probed to keep a
+# single prediction interactive in the Streamlit demo.
+EXPLAIN_MAX_TOKENS = 40
+EXPLAIN_TOP_K = 8
+
 # --- Artifact locations --------------------------------------------------------
 SVM_FILE = MODELS_DIR / "svm_tfidf.joblib"
 GRU_FILE = MODELS_DIR / "gru.keras"
@@ -155,9 +195,67 @@ REF_EMBEDDINGS_FILE = REFERENCE_DIR / "embeddings.npz"
 SCENARIOS_FILE = BENCHMARKS_DIR / "adversarial_scenarios.json"
 ADVERSARIAL_RESULTS_FILE = BENCHMARKS_DIR / "adversarial_results.json"
 
+# --- Optional transformer ensemble member (experiments/transformer_finetune) --
+# OFF by default. A 4th ensemble vote from an end-to-end fine-tuned transformer
+# is added ONLY after the promotion gate (src/ensemble_gate.should_promote)
+# confirms, on the untouched test set and the adversarial benchmark, that it
+# helps without regressing accuracy, adding censorship-side false positives, or
+# breaking the zero-false-negative guarantee. When enabled AND the artifact dir
+# exists, ScreeningSystem loads it (dynamic-int8-quantized on load) as a 4th
+# score; combine_verdict already averages an arbitrary number of members.
+# Enabling it at runtime also requires adding `transformers` to requirements.txt.
+TRANSFORMER_ENABLED = False
+TRANSFORMER_DIR = MODELS_DIR / "transformer_model"
+TRANSFORMER_MAX_TOKENS = 256
+
 # User feedback log (append-only JSONL). Under data/, which is git-ignored, so
 # user submissions are never committed. See src/feedback.py.
 FEEDBACK_LOG = DATA_DIR / "feedback.jsonl"
+
+# --- Active-learning retraining from feedback (see src/retrain_from_feedback) --
+# incorporate_feedback.py folds verified corrections into the *retrieval* corpus
+# only, and explicitly defers retraining the classifiers because "retraining on
+# unaudited user submissions would need far more care (adversarial submissions,
+# label noise, class balance)". These guards are that care, so a batch of
+# verified corrections can safely reach the SVM/RNN weights without letting a
+# flood of adversarial or mislabelled submissions reshape the model:
+#   * only VERIFIED corrections (user marked the result wrong + gave the right
+#     label) that were not already folded in (idempotent);
+#   * a MINIMUM batch size, so a handful of clicks never reshapes the model;
+#   * a hard CAP on how much of the training set feedback may become, balanced
+#     across classes, so submissions can nudge but never dominate;
+#   * corrections are added to the TRAINING split only — never the held-out test
+#     set — and any correction whose text already sits in training with the
+#     OPPOSITE label (a contradiction, the classic poisoning shape) is dropped.
+RETRAIN_MIN_CORRECTIONS = 20        # refuse to retrain on fewer verified corrections
+RETRAIN_MAX_FEEDBACK_FRACTION = 0.05  # corrections may be at most 5% of the training rows
+RETRAIN_MIN_CORRECTION_CHARS = 50   # drop junk/too-short submissions (cf. WELFAKE_MIN_CHARS)
+# A retrain that makes accuracy on the untouched test set worse by more than this
+# is surfaced as a loud regression warning (revert with git), not silently kept.
+RETRAIN_REGRESSION_TOLERANCE = 0.01
+
+# --- Temporal corpus refresh (see src/refresh_corpus) ------------------------
+# The reference corpus is frozen at 2015-2017 (see reports/figures/temporal_window
+# — real coverage only starts in 2016). This pulls RECENT, professionally
+# fact-checked claims from Google Fact Check — the one live source that returns
+# an actual verdict — and folds them into the retrieval corpus the same way
+# verified user corrections are, so semantic retrieval keeps seeing current
+# claims instead of decaying with time. Meant to run on a schedule (cron / the
+# user's scheduler). Requires GOOGLE_FACTCHECK_API_KEY; without it, it refuses
+# rather than silently ingesting nothing. Idempotent via a manifest of already-
+# ingested fact-check review URLs.
+REFRESH_SEED_QUERIES = [
+    "vaccine", "election", "climate change", "economy", "public health",
+    "immigration", "artificial intelligence", "war", "covid",
+]
+REFRESH_SEED_QUERIES_IT = [
+    "vaccino", "elezioni", "clima", "economia", "salute pubblica",
+    "immigrazione", "intelligenza artificiale", "guerra", "covid",
+]
+REFRESH_MAX_PER_QUERY = 10
+REFRESH_MAX_TOTAL = 200            # cap one refresh run, balanced across REAL/FAKE
+REFRESH_MIN_CLAIM_CHARS = 40       # drop fragmentary claim texts
+REFRESH_MANIFEST = DATA_DIR / "refresh_manifest.json"  # ingested review URLs (idempotency)
 
 # Minimum overall accuracy the 101-scenario adversarial benchmark must hold
 # (measured 76.2%; floor set with a margin below that). The hard invariant is

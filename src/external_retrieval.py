@@ -128,7 +128,7 @@ class ExternalEvidenceRetriever:
             return "REAL"
         return None
 
-    def _query_google_factcheck(self, text: str) -> dict:
+    def _query_google_factcheck(self, text: str, lang: str = config.DEFAULT_LANGUAGE) -> dict:
         if not self.factcheck_api_key:
             return {
                 "source": "google_fact_check",
@@ -144,7 +144,7 @@ class ExternalEvidenceRetriever:
         params = urlencode(
             {
                 "query": query,
-                "languageCode": config.GOOGLE_FACTCHECK_LANGUAGE,
+                "languageCode": config.GOOGLE_FACTCHECK_LANG.get(lang, config.GOOGLE_FACTCHECK_LANGUAGE),
                 "pageSize": self.max_records,
                 "key": self.factcheck_api_key,
             }
@@ -193,14 +193,16 @@ class ExternalEvidenceRetriever:
             "evidence": [hit.__dict__ for hit in evidence],
         }
 
-    def _query_wikipedia(self, text: str) -> dict:
+    def _query_wikipedia(self, text: str, lang: str = config.DEFAULT_LANGUAGE) -> dict:
         """Reliable, key-free topic context from Wikipedia's search API.
 
         Wikipedia ranks results by relevance rather than requiring every term
         (unlike GDELT's strict AND), so it dependably returns *something*
         on-topic. It is context, not fact-checking, so it never asserts a
-        verdict — the evidence is surfaced for the reader to judge.
+        verdict — the evidence is surfaced for the reader to judge. Queries the
+        language edition matching the claim (Italian claim -> it.wikipedia.org).
         """
+        host = config.WIKIPEDIA_HOST.get(lang, config.WIKIPEDIA_HOST[config.DEFAULT_LANGUAGE])
         query = _extract_keywords(text, max_terms=config.WIKIPEDIA_MAX_TERMS).replace('"', "")
         params = urlencode(
             {
@@ -212,7 +214,7 @@ class ExternalEvidenceRetriever:
                 "format": "json",
             }
         )
-        url = f"https://en.wikipedia.org/w/api.php?{params}"
+        url = f"https://{host}/w/api.php?{params}"
         request = Request(url, headers={"User-Agent": config.LIVE_USER_AGENT})
 
         try:
@@ -232,7 +234,7 @@ class ExternalEvidenceRetriever:
         for item in results[: self.max_records]:
             title = item.get("title") or ""
             snippet = _strip_html(item.get("snippet") or "")
-            page = "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_"))
+            page = f"https://{host}/wiki/" + quote(title.replace(" ", "_"))
             evidence.append(
                 ExternalHit(
                     source="wikipedia",
@@ -252,7 +254,7 @@ class ExternalEvidenceRetriever:
             "evidence": evidence,
         }
 
-    def _query_gdelt(self, text: str) -> dict:
+    def _query_gdelt(self, text: str, lang: str = config.DEFAULT_LANGUAGE) -> dict:
         now = time.monotonic()
         if now - ExternalEvidenceRetriever._last_gdelt_call < config.GDELT_MIN_INTERVAL:
             return {
@@ -264,8 +266,9 @@ class ExternalEvidenceRetriever:
             }
         ExternalEvidenceRetriever._last_gdelt_call = now
 
+        sourcelang = config.GDELT_SOURCELANG.get(lang, config.GDELT_SOURCE_LANGUAGE)
         keywords = _extract_keywords(text)
-        query = f"{keywords} sourcelang:{config.GDELT_SOURCE_LANGUAGE}" if keywords else f"sourcelang:{config.GDELT_SOURCE_LANGUAGE}"
+        query = f"{keywords} sourcelang:{sourcelang}" if keywords else f"sourcelang:{sourcelang}"
         params = urlencode(
             {
                 "query": query,
@@ -347,21 +350,27 @@ class ExternalEvidenceRetriever:
             "evidence": [hit.__dict__ for hit in evidence],
         }
 
-    def query(self, text: str) -> dict:
+    def query(self, text: str, lang: str | None = None) -> dict:
+        # Route every source to the claim's language (Italian claim -> Italian
+        # Wikipedia / news / fact-checks). Auto-detected unless caller forces it.
+        if lang is None:
+            from .language import detect_language
+            lang = detect_language(text)
+
         # 1. Google Fact Check: the only real verdict source — takes precedence.
-        google = self._query_google_factcheck(text)
+        google = self._query_google_factcheck(text, lang)
         if google["evidence"]:
             return google
 
         # 2. Wikipedia: reliable, key-free context. The dependable default.
-        wiki = self._query_wikipedia(text)
+        wiki = self._query_wikipedia(text, lang)
         if wiki["evidence"]:
             return wiki
 
         # 3. GDELT: last-resort news search (heavily rate-limited). Return it
         # when it has evidence OR a meaningful status (rate-limited/unavailable)
         # worth showing instead of a misleading generic fallback.
-        gdelt = self._query_gdelt(text)
+        gdelt = self._query_gdelt(text, lang)
         if gdelt["evidence"] or any(
             token in gdelt["message"].lower()
             for token in ("rate-limited", "unavailable", "unexpected")

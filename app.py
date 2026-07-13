@@ -196,8 +196,9 @@ if "result" in st.session_state:
         )
     if result["needs_review"]:
         st.error(
-            "⚠️ The models disagree strongly (or conflict with a fact-checker) "
-            "on this text — it would be routed to a human reviewer."
+            "⚠️ This text would be routed to a human reviewer — because the models "
+            "disagree strongly (or conflict with a fact-checker), or because "
+            "several manipulation / fabricated-authority markers stacked up."
         )
 
     # --- Manipulation techniques (the prebunking / inoculation layer) --------
@@ -220,6 +221,23 @@ if "result" in st.session_state:
             "🎯 No manipulation techniques detected in the phrasing (this checks "
             "*how* the text argues, not whether the claim is true)."
         )
+
+    # --- Fluent fabricated-authority register (the ai_fluent companion) -------
+    ai_style = result.get("ai_style", {})
+    if ai_style.get("count", 0) > 0:
+        st.subheader("📑 Fabricated-authority register detected")
+        st.caption(
+            "The *other* hard register: fluent, source-attributed prose that "
+            "borrows the sound of rigour — a specific-sounding study, a precise "
+            "statistic, clinical vocabulary. This is where fluent (often "
+            "AI-generated) fabrications slip past the trope-based check above. "
+            "Also evidence, not a verdict: legitimate science reporting uses this "
+            "register too, so a real source is simply *locatable* — verify it exists."
+        )
+        for marker in ai_style["markers"]:
+            quoted = ", ".join(f"“{m}”" for m in marker["matches"][:6])
+            st.markdown(f"**{marker['label']}** — {marker['explanation']}")
+            st.caption(f"Flagged phrasing: {quoted}")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -304,8 +322,7 @@ if "result" in st.session_state:
         st.caption(
             "The SVM is a linear model, so its score decomposes exactly into "
             "per-word contributions (TF-IDF weight × model coefficient) — this "
-            "is the model's own arithmetic, not a post-hoc approximation. The "
-            "RNNs stay black boxes by nature."
+            "is the model's own arithmetic, not a post-hoc approximation."
         )
         ecol1, ecol2 = st.columns(2)
         with ecol1:
@@ -320,6 +337,45 @@ if "result" in st.session_state:
                 st.markdown(f"- 🟩 `{c['token']}` ({c['weight']:.3f})")
             if not explanation["real_pushing"]:
                 st.caption("—")
+
+    # --- Why the RNNs scored this (leave-one-out occlusion) ------------------
+    neural = result.get("explanation_neural", {})
+    if neural.get("available"):
+        st.subheader("Why the RNNs scored this")
+        st.caption(
+            "The Bi-GRU/Bi-LSTM are not linear and expose no gradients as TFLite, "
+            "so we explain them by *occlusion*: each word is removed and the "
+            "neural score re-measured. The weight is how much that word moved the "
+            "fake-probability — an honest ablation, not the model's internals."
+        )
+        ncol1, ncol2 = st.columns(2)
+        with ncol1:
+            st.markdown("**Pushed toward FAKE**")
+            for c in neural["fake_pushing"][:6]:
+                st.markdown(f"- 🟥 `{c['token']}` (+{c['weight']:.3f})")
+            if not neural["fake_pushing"]:
+                st.caption("—")
+        with ncol2:
+            st.markdown("**Pushed toward REAL**")
+            for c in neural["real_pushing"][:6]:
+                st.markdown(f"- 🟩 `{c['token']}` ({c['weight']:.3f})")
+            if not neural["real_pushing"]:
+                st.caption("—")
+
+    # --- Which retrieved article drove the reference verdict ----------------
+    rag = result.get("explanation_rag", {})
+    if rag.get("available"):
+        st.subheader("Evidence that drove the reference match")
+        st.caption(
+            "The retrieval layer is its own explanation: these are the known "
+            "real/fake snippets most similar to your text. The reference verdict "
+            "is a memory of what the system has seen, not fact-checking — read "
+            "the evidence and judge for yourself."
+        )
+        for d in rag["driving"]:
+            icon = "⛔" if d["label"] == "FAKE" else "✅"
+            st.markdown(f"{icon} **known {d['label'].lower()}** (similarity {d['score']:.2f})")
+            st.caption(d["snippet"] + "…")
 
     # --- Feedback loop: capture corrections to improve the tool over time ----
     st.divider()

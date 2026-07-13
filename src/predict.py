@@ -20,8 +20,10 @@ from __future__ import annotations
 import joblib
 import numpy as np
 from . import config
+from .ai_style import detect_ai_style
 from .claim_rag import analyze_claims
-from .explain import averaged_linear_coef, top_token_contributions
+from .explain import (averaged_linear_coef, occlusion_importance, top_evidence,
+                      top_token_contributions)
 from .external_retrieval import ExternalEvidenceRetriever
 from .manipulation import detect_manipulation
 from .rag import ReferenceRAG
@@ -47,6 +49,27 @@ class ScreeningSystem:
         self.reference = ReferenceRAG() if with_reference else None
         self.live_retriever = ExternalEvidenceRetriever() if with_live else None
 
+        # Optional 4th ensemble member — see config.TRANSFORMER_ENABLED and the
+        # promotion gate (src/ensemble_gate). Best-effort: if it is disabled, the
+        # artifact is missing, or transformers isn't installed, the 3-model
+        # ensemble runs unchanged. A misconfigured 4th vote must never break a
+        # prediction.
+        self.transformer = self.transformer_tokenizer = None
+        if config.TRANSFORMER_ENABLED and config.TRANSFORMER_DIR.exists():
+            try:
+                import torch
+                from transformers import (AutoModelForSequenceClassification,
+                                          AutoTokenizer)
+
+                tok = AutoTokenizer.from_pretrained(str(config.TRANSFORMER_DIR))
+                mdl = AutoModelForSequenceClassification.from_pretrained(str(config.TRANSFORMER_DIR))
+                self.transformer = torch.quantization.quantize_dynamic(
+                    mdl.eval(), {torch.nn.Linear}, dtype=torch.qint8
+                )
+                self.transformer_tokenizer = tok
+            except Exception:
+                self.transformer = self.transformer_tokenizer = None
+
         # Per-token weights for the linear SVM, cached once for explainability.
         # Best-effort: if the artifact ever stops exposing linear coefficients,
         # predictions still work — only the explanation panel goes empty.
@@ -60,6 +83,37 @@ class ScreeningSystem:
         if self._svm_coef is None:
             return {"fake_pushing": [], "real_pushing": [], "available": False}
         return top_token_contributions(self._svm_coef, self.vectorizer, text)
+
+    def _neural_fake_prob(self, seq: np.ndarray) -> float:
+        """Neural sub-ensemble fake-probability (mean of Bi-GRU + Bi-LSTM)."""
+        return 0.5 * (self._rnn_score(self.gru, seq) + self._rnn_score(self.lstm, seq))
+
+    def explain_neural(self, text: str) -> dict:
+        """Per-token attribution for the RNN half via leave-one-out occlusion.
+
+        The RNNs are non-linear and, as TFLite, expose no gradients — but they
+        re-run cheaply, so we remove each leading token and measure how the
+        neural fake-probability moves. Best-effort: any failure yields an
+        unavailable explanation rather than breaking the prediction.
+        """
+        try:
+            seq_ids = self.tokenizer.texts_to_sequences([text])[0]
+            if not seq_ids:
+                return {"fake_pushing": [], "real_pushing": [], "available": False}
+            index_word = {i: w for w, i in self.tokenizer.word_index.items()}
+            n = min(len(seq_ids), config.EXPLAIN_MAX_TOKENS)
+            base_seq = pad_sequences([seq_ids], maxlen=config.MAX_LEN)
+            base = self._neural_fake_prob(base_seq)
+
+            tokens, occluded = [], []
+            for i in range(n):
+                occ = base_seq.copy()
+                occ[0, i] = 0.0  # occlude one token (0 = padding / unknown)
+                occluded.append(self._neural_fake_prob(occ))
+                tokens.append(index_word.get(int(seq_ids[i]), "<unk>"))
+            return occlusion_importance(base, occluded, tokens, top_k=config.EXPLAIN_TOP_K)
+        except Exception:
+            return {"fake_pushing": [], "real_pushing": [], "available": False}
 
     # ------------------------------------------------------------------ signals
     def _rnn_score(self, interpreter, seq: np.ndarray) -> float:
@@ -77,7 +131,21 @@ class ScreeningSystem:
         seq = pad_sequences(self.tokenizer.texts_to_sequences([text]), maxlen=config.MAX_LEN)
         scores["gru"] = self._rnn_score(self.gru, seq)
         scores["lstm"] = self._rnn_score(self.lstm, seq)
+        if self.transformer is not None:
+            scores["transformer"] = self._transformer_score(text)
         return scores
+
+    def _transformer_score(self, text: str) -> float:
+        """Fake-probability from the optional fine-tuned transformer member."""
+        import torch
+
+        enc = self.transformer_tokenizer(
+            str(text), truncation=True, padding=True,
+            max_length=config.TRANSFORMER_MAX_TOKENS, return_tensors="pt",
+        )
+        with torch.no_grad():
+            logits = self.transformer(**enc).logits
+        return float(torch.softmax(logits, dim=1)[0, 1])
 
     def reference_check(self, text: str) -> dict:
         """Retrieve the closest known real/fake snippets and score them."""
@@ -87,7 +155,7 @@ class ScreeningSystem:
         return self.reference.query(text)
 
     # ------------------------------------------------------------------ verdict
-    def predict(self, text: str) -> dict:
+    def predict(self, text: str, explain: bool = True) -> dict:
         scores = self.model_scores(text)
         reference = self.reference_check(text)
         claim_analysis = analyze_claims(text, self.reference, self.live_retriever) if self.reference is not None else {
@@ -99,10 +167,15 @@ class ScreeningSystem:
 
         live = _aggregate_live_verdict(claim_analysis)
         manipulation = detect_manipulation(text)
+        ai_style = detect_ai_style(text)
         n_words = len(str(text).split())
         verdict_info = combine_verdict(
-            scores, reference, live=live, n_words=n_words, manipulation=manipulation
+            scores, reference, live=live, n_words=n_words,
+            manipulation=manipulation, ai_style=ai_style,
         )
+        # SVM (exact) and retrieval evidence are cheap; the RNN occlusion is one
+        # forward pass per token, so it is gated (skipped e.g. in the offline
+        # benchmark, which only reads the verdict). See predict(explain=...).
         return {
             **verdict_info,
             "model_scores": scores,
@@ -110,7 +183,11 @@ class ScreeningSystem:
             "claim_analysis": claim_analysis,
             "live": live,
             "manipulation": manipulation,
+            "ai_style": ai_style,
             "explanation": self.explain(text),
+            "explanation_neural": self.explain_neural(text) if explain else {
+                "fake_pushing": [], "real_pushing": [], "available": False},
+            "explanation_rag": top_evidence(reference),
         }
 
 
@@ -147,7 +224,8 @@ def _aggregate_live_verdict(claim_analysis: dict) -> dict | None:
 
 
 def combine_verdict(scores: dict, reference: dict, live: dict | None = None,
-                    n_words: int | None = None, manipulation: dict | None = None) -> dict:
+                    n_words: int | None = None, manipulation: dict | None = None,
+                    ai_style: dict | None = None) -> dict:
     """Pure decision logic: fuse the model ensemble with external evidence.
 
     Priority of signals, strongest first:
@@ -174,6 +252,12 @@ def combine_verdict(scores: dict, reference: dict, live: dict | None = None,
     # Stacked manipulation techniques are grounds for human review on their own,
     # regardless of the label — but never flip the label (see src/manipulation.py).
     manip_high = bool(manipulation and manipulation.get("high"))
+    # Same contract for the fluent fabricated-authority register: several stacked
+    # markers route the text to a human (verify the cited source exists) but never
+    # flip the label — this is the ai_fluent gap, where a fabrication reads like
+    # reporting and the ensemble tends to call it REAL (see src/ai_style.py).
+    ai_style_high = bool(ai_style and ai_style.get("high"))
+    review = manip_high or ai_style_high
 
     # 1. Live fact-check verdict — takes precedence over everything else.
     if live and live.get("verdict"):
@@ -186,7 +270,7 @@ def combine_verdict(scores: dict, reference: dict, live: dict | None = None,
         return {
             "verdict": verdict,
             "fake_probability": 1.0 if verdict == "FAKE" else 0.0,
-            "needs_review": bool(disagree or conflict or manip_high),
+            "needs_review": bool(disagree or conflict or review),
             "reason": f"live fact-check verdict ({source})",
             "confidence": "high",
             "evidence_backed": True,
@@ -201,7 +285,7 @@ def combine_verdict(scores: dict, reference: dict, live: dict | None = None,
         return {
             "verdict": verdict,
             "fake_probability": 1.0 if verdict == "FAKE" else 0.0,
-            "needs_review": bool(disagree or manip_high),
+            "needs_review": bool(disagree or review),
             "reason": f"reference-corpus override (near-verbatim {kind} match)",
             "confidence": "high",
             "evidence_backed": True,
@@ -214,7 +298,7 @@ def combine_verdict(scores: dict, reference: dict, live: dict | None = None,
         return {
             "verdict": verdict,
             "fake_probability": score,
-            "needs_review": bool(disagree or manip_high),
+            "needs_review": bool(disagree or review),
             "reason": "ensemble + reference match to a known fake claim",
             "confidence": "medium",
             "evidence_backed": True,
@@ -227,11 +311,17 @@ def combine_verdict(scores: dict, reference: dict, live: dict | None = None,
     # route to human verification — but keep the label (never flip FAKE->REAL),
     # so a genuine hoax is still flagged.
     verdict = "FAKE" if ensemble > 0.5 else "REAL"
-    confidence = "low" if (disagree or short) else "medium"
+    # A model-only REAL verdict on text saturated with the fabricated-authority
+    # register is the ai_fluent failure mode: fluent, cite-shaped prose the
+    # article-trained models wave through. Don't present it as settled — lower
+    # confidence and route to review (the label is untouched: zero-false-negative
+    # holds, and a genuinely real, well-sourced article only gets a "verify" nudge).
+    ai_style_unbacked_real = ai_style_high and verdict == "REAL"
+    confidence = "low" if (disagree or short or ai_style_unbacked_real) else "medium"
     return {
         "verdict": verdict,
         "fake_probability": ensemble,
-        "needs_review": bool(disagree or manip_high),
+        "needs_review": bool(disagree or review),
         "reason": "ensemble consensus",
         "confidence": confidence,
         "evidence_backed": False,
